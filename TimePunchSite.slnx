@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="frontend/frontend.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="TestingProject/TestingProject.csproj" Id="907d0c22-0819-43a7-95cc-39f987ab4a56" />
+  <Project Path="TimePunchSite.AppHost/TimePunchSite.AppHost.csproj" />
+  <Project Path="TimePunchSite.Server/TimePunchSite.Server.csproj" />
+</Solution>

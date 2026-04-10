@@ -1,5 +1,6 @@
+import { useNavigate } from 'react-router-dom'
 import './App.css'
-import React, { useState, type ChangeEvent } from 'react';
+import { useState, type ChangeEvent } from 'react';
 
 function LogInPage() {
     //State variables for user name and password
@@ -9,12 +10,18 @@ function LogInPage() {
 
     //Event handlers for input changes
     const handleUserNameChange = (event: ChangeEvent<HTMLInputElement>) => {
-        // This returns a real number, or NaN if the box is empty
-        setUserID(event.target.valueAsNumber);
+        const val = event.target.valueAsNumber;
+        setUserID(isNaN(val) ? "" : val);//If the input is not a valid number, set it to an empty string
     };
     const handlePasswordChange = (event: ChangeEvent<HTMLInputElement>) => {
         setPassword(event.target.value);
     };
+
+    // Navigation logic
+    const navigate = useNavigate(); //Get the navigate function from react-router-dom
+    const handleNavigation = () => {
+        navigate('/employee-dashboard', { state: { id: userID } }); //Navigate to the employee dashboard and pass the userID as state
+    }
 
     //Validation logic
     const isPasswordValid = password.length == 0 || password.length >= 3; //dont show an error if password length is 0 because nothing has been entered yet
@@ -22,6 +29,8 @@ function LogInPage() {
 
     //Event handler for login button click
     const handleLogin = async () => {
+        if (!userID || password.length < 3) return; //Shouldn't be possible to click the button if the form is invalid, but this is just a safety check
+
         setIsLoading(true);
 
         try {
@@ -29,15 +38,15 @@ function LogInPage() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    id: userID,       // Matches "id" in C# JsonPropertyName
-                    password: password // Matches "password"
+                    id: userID,       
+                    password: password 
                 }),
             });
 
             const result = await response.json();
 
             if (response.ok && result.success) {
-                //TODO route to employee dashboard
+                handleNavigation();
             } else {
                 alert(result.message || "Login failed. Please check your credentials.");
             }
@@ -72,9 +81,9 @@ function LogInPage() {
                                 value={password}
                                 onChange={handlePasswordChange}
                                 style={{
-                                    // If invalid, border is red. Otherwise, use a default gray.
+                                    //If invalid, border is red. Otherwise, use a default gray.
                                     border: isPasswordValid ? '1px solid #ccc' : '2px solid red',
-                                    outline: isPasswordValid ? 'initial' : 'none' // Removes the focus ring to show the red
+                                    outline: isPasswordValid ? 'initial' : 'none' //Removes the focus ring to show the red
                                 }}
                             />
 

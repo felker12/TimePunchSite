@@ -6,14 +6,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Serialization;
 
-namespace TimePunchSite.Server
+namespace TimePunchSite.Server.Data
 {
-    // Ensure this matches the JSON keys sent by React (id and password)
-    // Record for the incoming JSON
-    public record LoginRequest(
-        [property: JsonPropertyName("id")] int Id,
-        [property: JsonPropertyName("password")] string Password
-    );
 
     public static class DataLayer
     {
@@ -65,7 +59,7 @@ namespace TimePunchSite.Server
             return result != DBNull.Value ? Convert.ToInt32(result) : -1;
         }
 
-        //
+        // Check login credentials against the database
         public static bool CheckLogin(string connectionString, int id, string pass)
         {
             if (string.IsNullOrEmpty(connectionString) || string.IsNullOrEmpty(pass) || id < 1)

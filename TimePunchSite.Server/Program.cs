@@ -1,20 +1,5 @@
-using Microsoft.Data.SqlClient;
-using System.Diagnostics;
-using TimePunchSite.Server;
-
-// For more information on how to configure your application, visit https://aka.ms/aspnet/core/fundamentals/app-configuration.
-//TODO: Move the connection string to a secure location, such as Azure Key Vault or environment variables, and do not hardcode sensitive information in the codebase.
-var sqlBuilder = new SqlConnectionStringBuilder
-{
-    DataSource = "timepunch-site-server.database.windows.net,1433",
-    UserID = "AnthonyFelker",
-    Password = "Felker12",
-    InitialCatalog = "TimePunchSiteDB",
-    ConnectTimeout = 30
-};
-
-var connectionString = sqlBuilder.ConnectionString;
-// end of connection string setup ====== dont forget. move this to a secure location before deploying the application.
+using TimePunchSite.Server.Data;
+using TimePunchSite.Server.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,20 +14,18 @@ builder.Services.AddProblemDetails();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-// Configure CORS to allow requests from the React frontend (adjust the origin as needed)
-builder.Services.AddCors(options => {
-    options.AddDefaultPolicy(policy => {
-        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
-    });
-});
+// Add the DatabaseService to the dependency injection container
+// scoped lifetime is appropriate for database services to ensure a new instance per request
+builder.Services.AddScoped<DatabaseService>();
+builder.Services.AddScoped<PasswordService>();
+builder.Services.AddScoped<EmployeeRepository>();
+
+//var connectionString = builder.Configuration.GetConnectionString("TimePunchDB");
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
-
-// Enable CORS middleware
-app.UseCors();
 
 if (app.Environment.IsDevelopment())
 {
@@ -53,14 +36,15 @@ app.UseOutputCache();
 
 var api = app.MapGroup("/api");
 
-api.MapPost("check-login", async (LoginRequest data) =>
-{\
+api.MapPost("check-login", (LoginRequest data, EmployeeRepository repo) =>
+{
     // Validate inputs
     if (data.Id <= 0 || string.IsNullOrEmpty(data.Password))
         return Results.BadRequest("Invalid input data.");
 
     // Check login credentials against the database
-    bool isValid = DataLayer.CheckLogin(connectionString, data.Id, data.Password);\
+    //bool isValid = DataLayer.CheckLogin(connectionString, data.Id, data.Password);
+    bool isValid = repo.CheckLogin(data.Id, data.Password);
 
     // Return appropriate response based on login validation
     if (isValid)
@@ -72,6 +56,11 @@ api.MapPost("check-login", async (LoginRequest data) =>
 })
 .WithName("CheckLogin");
 
+api.MapPost("get-timepunches", async () =>
+{
+
+})
+.WithName("GetTimePunches");
 
 app.MapDefaultEndpoints();
 

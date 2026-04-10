@@ -16,19 +16,13 @@ function App() {
         >
           <img src={aspireLogo} className="logo" alt="Aspire logo" />
         </a>
-        <h1 className="app-title">Aspire Starter</h1>
-        <p className="app-subtitle">Modern distributed application development</p>
-              <div>
-                  <p> test string </p>
-                  <Link to="/employee-login"> employee login </Link>
-              </div>
       </header>
 
       <main className="main-content">
         <section className="weather-section" aria-labelledby="weather-heading">
           <div className="card">
             <div className="section-header">
-              <h2 id="weather-heading" className="section-title">Weather Forecast</h2>
+                <Link to="/employee-login"> Employee Login </Link>
             </div>
           </div>
         </section>

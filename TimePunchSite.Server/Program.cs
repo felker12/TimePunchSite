@@ -112,6 +112,15 @@ api.MapPost("get-timepunches", [Authorize] (EmployeeRepository repo, ClaimsPrinc
 })
 .WithName("GetTimePunches");
 
+api.MapPost("get-timepunches-data", [Authorize] (EmployeeRepository repo, ClaimsPrincipal user) =>
+{
+    int userId = getUserIdFromClaims(user);
+    var punches = repo.GetTimePunchDataList(userId);
+
+    return Results.Ok(punches);
+})
+.WithName("GetTimePunchesData");
+
 api.MapPost("get-user-id", [Authorize] (ClaimsPrincipal user) =>
 {
     return Results.Ok(new { id = getUserIdFromClaims(user) });

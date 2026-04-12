@@ -815,3 +815,61 @@
 .nav-link-item:hover {
     text-decoration: underline;
 }
+
+/* Ensure the table takes up the full width of the card */
+.time-table {
+    width: 100%;
+    border-collapse: collapse; /* Removes double borders */
+    margin-top: 10px;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden; /* Helps with rounded corners */
+}
+
+/* Add padding to the header cells */
+.time-table th {
+    background-color: #f8f9fa;
+    color: #333;
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Add padding to the data cells */
+.time-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+    color: #555;
+}
+
+/* Add a hover effect so the user can track rows easily */
+.time-table tr:hover {
+    background-color: #f1f4f8;
+}
+
+/* Style the status badges */
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-badge.working {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-badge.on-break {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.shift-ended {
+    background-color: #e2e3e5;
+    color: #383d41;
+}

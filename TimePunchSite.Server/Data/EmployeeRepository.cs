@@ -37,6 +37,32 @@ public class EmployeeRepository(DatabaseService database, PasswordService passwo
         return false;
     }
 
+    public List<TimePunchData> GetTimePunchDataList(int id)
+    {
+        List<TimePunchData> punches = [];
+
+        using var connection = _database.CreateConnection();
+        const string query = "SELECT EmployeeID, ClockIn, ClockOut, BreakStart, BreakEnd FROM dbo.TimePunches WHERE EmployeeID = @id ORDER BY ClockIn DESC";
+
+        using var command = new SqlCommand(query, connection);
+        command.Parameters.Add("@id", SqlDbType.Int).Value = id;
+        connection.Open();
+
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            punches.Add(new TimePunchData(
+                reader.GetInt32(0),
+                reader.GetDateTime(1),
+                reader.IsDBNull(2) ? null : reader.GetDateTime(2),
+                reader.IsDBNull(3) ? null : reader.GetDateTime(3),
+                reader.IsDBNull(4) ? null : reader.GetDateTime(4)
+            ));
+        }
+
+        return punches;
+    }
+
     public List<string> GetTimePunches(int id)
     {
         List<string> punches = [];

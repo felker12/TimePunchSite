@@ -2,11 +2,32 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import './App.css';
 
+interface TimePunch {
+    employeeID: number;
+    clockIn: string;     // Dates come across as ISO strings in JSON
+    clockOut: string | null;
+    breakStart: string | null;
+    breakEnd: string | null;
+}
+
+type ShiftStatus = "Working" | "On Break" | "Shift Ended";
+
+const formatTime = (dateStr: string | null) => {
+    if (!dateStr) return "--";
+    return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
+const getShiftStatus = (punch: TimePunch): ShiftStatus => {
+    if (punch.clockIn && !punch.clockOut) {
+        return punch.breakStart && !punch.breakEnd ? "On Break" : "Working";
+    }
+    return "Shift Ended";
+};
 
 function EmployeeTimePunchHistory() {
     const [authStatus, setAuthStatus] = useState(false);
     const [verifiedUserID, setVerifiedUserID] = useState<string | null>(null);
-    const [punches, setPunches] = useState<string[]>([]);
+    const [punches, setPunches] = useState<TimePunch[]>([]);
 
     useEffect(() => {
         const verifyAuth = async () => {
@@ -14,7 +35,7 @@ function EmployeeTimePunchHistory() {
             console.log("Using Token:", token); // Verify this matches the token you decoded //TODO delete this line after verifying the token is correct
 
             try {
-                const response = await fetch('/api/get-timepunches', {
+                const response = await fetch('/api/get-timepunches-data', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -76,22 +97,39 @@ function EmployeeTimePunchHistory() {
           </header>
 
           <main className="main-content">
-              <div className="card" style={{ minWidth: '300px' }}>
-                  {authStatus ?? <p>Checking authorization...</p>}
+              <div className="card" style={{ minWidth: '400px', width: '70%' }}>
+                  {!authStatus && <p>Checking authorization...</p>}
                   {/* authStatus ? <p>Authorized</p> : <p>Checking authorization...</p> */}
                   <h2>Employee {verifiedUserID}'s Time History</h2>
                   {punches.length > 0 ? (
-                      <div style={{ textAlign: 'left', marginTop: '10px' }}>
-                          {punches.map((punchStr, index) => (
-                              <div key={index} style={{
-                                  padding: '8px',
-                                  borderBottom: '1px solid #eee',
-                                  fontSize: '14px'
-                              }}>
-                                  {punchStr}
-                              </div>
-                          ))}
-                      </div>
+                      <table className="time-table">
+                          <thead>
+                              <tr>
+                                  <th>Date</th>
+                                  <th>Status</th>
+                                  <th>Clock In</th>
+                                  <th>Break</th>
+                                  <th>Clock Out</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {punches.map((p, index) => (
+                                  <tr key={index}>
+                                      <td>{new Date(p.clockIn).toLocaleDateString()}</td>
+                                      <td>
+                                          <span className={`status-badge ${getShiftStatus(p).toLowerCase().replace(' ', '-')}`}>
+                                              {getShiftStatus(p)}
+                                          </span>
+                                      </td>
+                                      <td>{formatTime(p.clockIn)}</td>
+                                      <td>
+                                          {p.breakStart ? `${formatTime(p.breakStart)} - ${formatTime(p.breakEnd)}` : "No Break"}
+                                      </td>
+                                      <td>{formatTime(p.clockOut)}</td>
+                                  </tr>
+                              ))}
+                          </tbody>
+                      </table>
                   ) : (
                       <p>No punch history found.</p>
                   )}

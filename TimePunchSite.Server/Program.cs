@@ -6,7 +6,6 @@ using System.Text;
 using TimePunchSite.Server.Data;
 using TimePunchSite.Server.Security;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
@@ -22,8 +21,7 @@ builder.Services.AddOpenApi();
 
 // Configure JWT authentication
 var jwtKey = builder.Configuration["Jwt:Key"];
-var key = Encoding.ASCII.GetBytes(jwtKey!);
-
+var key = Encoding.UTF8.GetBytes(jwtKey!);
 
 // Set up authentication with JWT Bearer tokens
 builder.Services.AddAuthentication(options =>
@@ -92,9 +90,7 @@ api.MapPost("check-login", (
     bool isValid = repo.CheckLogin(data.Id, data.Password);
 
     if (!isValid)
-    {
         return Results.Json(new { success = false, message = "Invalid ID or Password" }, statusCode: 401);
-    }
 
     var token = jwtService.GenerateToken(data.Id);
 
@@ -109,23 +105,27 @@ api.MapPost("check-login", (
 // Example of a secure endpoint that requires authentication
 api.MapPost("get-timepunches", [Authorize] (EmployeeRepository repo, ClaimsPrincipal user) =>
 {
-    var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
-
-    if (userIdClaim == null)
-        return Results.Unauthorized();
-
-    int userId = int.Parse(userIdClaim.Value);
-
-
+    int userId = getUserIdFromClaims(user);
     var punches = repo.GetTimePunches(userId);
 
-
-    return Results.Ok("Secure endpoint");
+    return Results.Ok(punches);
 })
 .WithName("GetTimePunches");
+
+api.MapPost("get-user-id", [Authorize] (ClaimsPrincipal user) =>
+{
+    return Results.Ok(new { id = getUserIdFromClaims(user) });
+}).WithName("GetId");
 
 app.MapDefaultEndpoints();
 
 app.UseFileServer();
 
 app.Run();
+
+static int getUserIdFromClaims(ClaimsPrincipal user)
+{
+    var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+
+    return userIdClaim == null ? throw new InvalidOperationException("User ID claim is missing.") : int.Parse(userIdClaim.Value);
+}

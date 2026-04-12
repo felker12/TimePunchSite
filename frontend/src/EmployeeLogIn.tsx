@@ -20,7 +20,7 @@ function LogInPage() {
     //Navigation logic
     const navigate = useNavigate(); //Get the navigate function from react-router-dom
     const handleNavigation = () => {
-        navigate('/employee-dashboard', { state: { id: userID } }); //Navigate to the employee dashboard and pass the userID as state
+        navigate('/employee-dashboard'); //Navigate to the employee dashboard and pass the userID as state
         //navigate('/employee-dashboard'); //todo change to this once the employee dashboard is set up to read the userID from localStorage instead of navigation state
     }
 

@@ -792,3 +792,26 @@
   outline-offset: 2px;
 }
 
+.nav-links {
+    display: flex;
+    gap: 20px; /* Adjust this number to increase/decrease space */
+    align-items: center;
+}
+
+.nav-links .nav-link-item:not(:last-child)::after {
+    content: "|";
+    margin-left: 20px;
+    color: #ccc;
+    cursor: default;
+}
+
+/* Make links look more like buttons */
+.nav-link-item {
+    text-decoration: none;
+    color: #007bff;
+    font-weight: 500;
+}
+
+.nav-link-item:hover {
+    text-decoration: underline;
+}

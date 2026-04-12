@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import './App.css';
 
-function EmployeeDashboard() {
+
+function EmployeeTimePunchHistory() {
     const [authStatus, setAuthStatus] = useState(false);
     const [verifiedUserID, setVerifiedUserID] = useState<string | null>(null);
     const [punches, setPunches] = useState<string[]>([]);
@@ -61,28 +62,43 @@ function EmployeeDashboard() {
         getUserIDFromStorage();
     }, []);
 
-    return (
-        <div className="app-container">
-            <header className="app-header">
-                <nav className="nav-links">
-                    <Link to="/employee-login" className="nav-link-item">
-                        Logout
-                    </Link>
-                    <Link to="/employee-time-punch-history" className="nav-link-item">
-                        Time Punch History
-                    </Link>
-                </nav>
-            </header>
+  return (
+      <div className="app-container">
+          <header className="app-header">
+              <nav className="nav-links">
+                  <Link to="/employee-login" className="nav-link-item">
+                      Logout
+                  </Link>
+                  <Link to="/employee-dashboard" className="nav-link-item">
+                      Employee Dashboard
+                  </Link>
+              </nav>
+          </header>
 
-            <main className="main-content">
-                <div className="card" style={{ minWidth: '300px' }}>
-                    {!authStatus && <p>Checking authorization...</p>}
-                    {/* authStatus ? <p>Authorized</p> : <p>Checking authorization...</p> */}
-                    <h2>Employee {verifiedUserID}'s Time History</h2>
-                </div>
-            </main>
-        </div>
-    );
+          <main className="main-content">
+              <div className="card" style={{ minWidth: '300px' }}>
+                  {authStatus ?? <p>Checking authorization...</p>}
+                  {/* authStatus ? <p>Authorized</p> : <p>Checking authorization...</p> */}
+                  <h2>Employee {verifiedUserID}'s Time History</h2>
+                  {punches.length > 0 ? (
+                      <div style={{ textAlign: 'left', marginTop: '10px' }}>
+                          {punches.map((punchStr, index) => (
+                              <div key={index} style={{
+                                  padding: '8px',
+                                  borderBottom: '1px solid #eee',
+                                  fontSize: '14px'
+                              }}>
+                                  {punchStr}
+                              </div>
+                          ))}
+                      </div>
+                  ) : (
+                      <p>No punch history found.</p>
+                  )}
+              </div>
+          </main>
+      </div>
+  );
 }
 
-export default EmployeeDashboard;
+export default EmployeeTimePunchHistory;

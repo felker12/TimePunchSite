@@ -1,86 +1,31 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import './App.css';
-
-interface TimePunch {
-    employeeID: number;
-    clockIn: string;     // Dates come across as ISO strings in JSON
-    clockOut: string | null;
-    breakStart: string | null;
-    breakEnd: string | null;
-}
-
-type ShiftStatus = "Working" | "On Break" | "Shift Ended";
-
-const formatTime = (dateStr: string | null) => {
-    if (!dateStr) return "--";
-    return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-};
-
-const getShiftStatus = (punch: TimePunch): ShiftStatus => {
-    if (punch.clockIn && !punch.clockOut) {
-        return punch.breakStart && !punch.breakEnd ? "On Break" : "Working";
-    }
-    return "Shift Ended";
-};
+import { type TimePunch, formatTime, getShiftStatus } from '../src/utils/TimePunchScripts'; 
+import { apiService } from '../src/utils/apiService'; 
 
 function EmployeeTimePunchHistory() {
-    const [authStatus, setAuthStatus] = useState(false);
-    const [verifiedUserID, setVerifiedUserID] = useState<string | null>(null);
     const [punches, setPunches] = useState<TimePunch[]>([]);
+    const [verifiedUserID, setVerifiedUserID] = useState<number | null>(null);
 
     useEffect(() => {
-        const verifyAuth = async () => {
-            const token = localStorage.getItem("token"); // Retrieve token stored during login
-            console.log("Using Token:", token); // Verify this matches the token you decoded //TODO delete this line after verifying the token is correct
-
+        const loadData = async () => {
             try {
-                const response = await fetch('/api/get-timepunches-data', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}` //Send the JWT
-                    }
-                });
+                //Call shared service
+                const [id, punchData] = await Promise.all([
+                    apiService.getVerifiedUserID(),
+                    apiService.getTimePunches()
+                ]);
 
-                if (response.ok) {
-                    const data = await response.json();
-                    setPunches(data);
-                    setAuthStatus(true); //Should show "Secure endpoint"
-                } else {
-                    setAuthStatus(false);
-                }
-            } catch (error) {
-                setAuthStatus(false);
+                setVerifiedUserID(id);
+                setPunches(punchData);
+            } catch (err) {
+                console.error("Auth failed, redirecting...");
+                //navigate('/employee-login');
             }
         };
 
-        verifyAuth();
-
-        const getUserIDFromStorage = async () => {
-            const token = localStorage.getItem("token");
-
-            try {
-                const response = await fetch('/api/get-user-id', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}` //Send the JWT
-                    }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    setVerifiedUserID(data.id);
-                } else {
-                    console.log("Failed to get user ID:", response.status);
-                }
-            } catch (error) {
-                console.log("Network error getting user ID.");
-            }
-        }
-
-        getUserIDFromStorage();
+        loadData();
     }, []);
 
   return (
@@ -98,8 +43,6 @@ function EmployeeTimePunchHistory() {
 
           <main className="main-content">
               <div className="card" style={{ minWidth: '400px', width: '70%' }}>
-                  {!authStatus && <p>Checking authorization...</p>}
-                  {/* authStatus ? <p>Authorized</p> : <p>Checking authorization...</p> */}
                   <h2>Employee {verifiedUserID}'s Time History</h2>
                   {punches.length > 0 ? (
                       <table className="time-table">

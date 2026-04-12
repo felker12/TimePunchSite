@@ -102,7 +102,7 @@ api.MapPost("check-login", (
 })
 .WithName("CheckLogin");
 
-// Example of a secure endpoint that requires authentication
+//Endpoint requires authentication
 api.MapPost("get-timepunches", [Authorize] (EmployeeRepository repo, ClaimsPrincipal user) =>
 {
     int userId = getUserIdFromClaims(user);
@@ -112,6 +112,7 @@ api.MapPost("get-timepunches", [Authorize] (EmployeeRepository repo, ClaimsPrinc
 })
 .WithName("GetTimePunches");
 
+//Endpoint requires authentication
 api.MapPost("get-timepunches-data", [Authorize] (EmployeeRepository repo, ClaimsPrincipal user) =>
 {
     int userId = getUserIdFromClaims(user);

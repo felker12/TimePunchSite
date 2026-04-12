@@ -17,10 +17,11 @@ function LogInPage() {
         setPassword(event.target.value);
     };
 
-    // Navigation logic
+    //Navigation logic
     const navigate = useNavigate(); //Get the navigate function from react-router-dom
     const handleNavigation = () => {
         navigate('/employee-dashboard', { state: { id: userID } }); //Navigate to the employee dashboard and pass the userID as state
+        //navigate('/employee-dashboard'); //todo change to this once the employee dashboard is set up to read the userID from localStorage instead of navigation state
     }
 
     //Validation logic
@@ -29,6 +30,7 @@ function LogInPage() {
 
     //Event handler for login button click
     const handleLogin = async () => {
+        if (isLoading) return; //prevent duplicate requests
         if (!userID || password.length < 3) return; //Shouldn't be possible to click the button if the form is invalid, but this is just a safety check
 
         setIsLoading(true);
@@ -46,6 +48,8 @@ function LogInPage() {
             const result = await response.json();
 
             if (response.ok && result.success) {
+                localStorage.setItem("token", result.token); //Store the token in localStorage for future authenticated requests
+
                 handleNavigation();
             } else {
                 alert(result.message || "Login failed. Please check your credentials.");
@@ -98,10 +102,10 @@ function LogInPage() {
                         <div style={{ paddingTop: '5px', paddingBottom: '5px'}}>
                             <button
                                 id="logInBtn"
-                                disabled={!isFormValid}
+                                disabled={!isFormValid || isLoading} /* Disable the button if the form is invalid or if a login attempt is in progress */
                                 onClick={handleLogin}
                             >
-                                {isLoading ? "Logging In..." : "Log In"}
+                                {isLoading ? "Logging In..." : "Log In"} 
                             </button>
                         </div>
                     </div>

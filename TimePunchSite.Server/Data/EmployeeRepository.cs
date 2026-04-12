@@ -4,16 +4,10 @@ using TimePunchSite.Server.Security;
 
 namespace TimePunchSite.Server.Data;
 
-public class EmployeeRepository
+public class EmployeeRepository(DatabaseService database, PasswordService passwordService)
 {
-    private readonly DatabaseService _database;
-    private readonly PasswordService _passwordService;
-
-    public EmployeeRepository(DatabaseService database, PasswordService passwordService)
-    {
-        _database = database;
-        _passwordService = passwordService;
-    }
+    private readonly DatabaseService _database = database;
+    private readonly PasswordService _passwordService = passwordService;
 
     public bool CheckLogin(int id, string pass)
     {
@@ -41,5 +35,20 @@ public class EmployeeRepository
         }
 
         return false;
+    }
+
+    public List<string> GetTimePunches(int id)
+    {
+        List<string> punches = [];
+
+        if (id < 1) 
+            return punches;
+
+
+
+
+
+
+        return punches;
     }
 }

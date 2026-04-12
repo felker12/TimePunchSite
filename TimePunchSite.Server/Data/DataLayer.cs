@@ -1,10 +1,8 @@
 ﻿using Konscious.Security.Cryptography;
 using Microsoft.Data.SqlClient;
 using System.Data;
-using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json.Serialization;
 
 namespace TimePunchSite.Server.Data
 {

@@ -76,10 +76,7 @@ app.UseAuthorization();
 
 var api = app.MapGroup("/api");
 
-api.MapPost("check-login", (
-    LoginRequest data,
-    EmployeeRepository repo,
-    JwtService jwtService) =>
+api.MapPost("check-login", (LoginRequest data, EmployeeRepository repo, JwtService jwtService) =>
 {
     // Validate inputs
     if (data.Id <= 0 || string.IsNullOrEmpty(data.Password))
@@ -101,16 +98,6 @@ api.MapPost("check-login", (
     });
 })
 .WithName("CheckLogin");
-
-//Endpoint requires authentication
-api.MapPost("get-timepunches", [Authorize] (EmployeeRepository repo, ClaimsPrincipal user) =>
-{
-    int userId = getUserIdFromClaims(user);
-    var punches = repo.GetTimePunches(userId);
-
-    return Results.Ok(punches);
-})
-.WithName("GetTimePunches");
 
 //Endpoint requires authentication
 api.MapPost("get-timepunches-data", [Authorize] (EmployeeRepository repo, ClaimsPrincipal user) =>

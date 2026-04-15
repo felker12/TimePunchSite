@@ -3,10 +3,17 @@ import { useEffect, useState } from 'react';
 import './App.css';
 import { type TimePunch, formatTime, getShiftStatus } from '../src/utils/TimePunchScripts'; 
 import { apiService } from '../src/utils/apiService'; 
+import { useNavigate } from 'react-router-dom'
 
 function EmployeeTimePunchHistory() {
     const [punches, setPunches] = useState<TimePunch[]>([]);
     const [verifiedUserID, setVerifiedUserID] = useState<number | null>(null);
+
+    //Navigation logic
+    const navigate = useNavigate(); //Get the navigate function from react-router-dom
+    const handleNavigation = () => {
+        navigate('/employee-login'); //Navigate to the employee dashboard
+    }
 
     useEffect(() => {
         const loadData = async () => {
@@ -16,12 +23,12 @@ function EmployeeTimePunchHistory() {
                     apiService.getVerifiedUserID(),
                     apiService.getTimePunches()
                 ]);
-
+                
                 setVerifiedUserID(id);
                 setPunches(punchData);
             } catch (err) {
                 console.error("Auth failed, redirecting...");
-                //navigate('/employee-login');
+                handleNavigation(); //Redirect to login if auth fails
             }
         };
 

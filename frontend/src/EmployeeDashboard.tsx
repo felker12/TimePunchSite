@@ -21,9 +21,9 @@ function EmployeeDashboard() {
     const handlePunchAction = async (actionType: string) => {
         console.log(`Performing action: ${actionType} for user ${verifiedUserID}`);
         
-        //TODO: Implement the logic to perform the punch action based on the actionType parameter.
-        // Here you will call your apiService.performPunch(actionType)
-        // and then re-run loadDash() to refresh the UI!
+        //TODO: Implement the logic to perform the punch action based on the actionType parameter
+        // Here will call apiService.performPunch(actionType)
+        // and then re-run loadDash() to refresh the UI
     };
 
     useEffect(() => {

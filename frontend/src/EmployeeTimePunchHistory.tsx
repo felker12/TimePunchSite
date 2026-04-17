@@ -10,7 +10,7 @@ function EmployeeTimePunchHistory() {
     const [verifiedUserID, setVerifiedUserID] = useState<number | null>(null);
 
     //Navigation logic
-    const navigate = useNavigate(); //Get the navigate function from react-router-dom
+    const navigate = useNavigate();
     const handleNavigation = () => {
         navigate('/employee-login'); //Navigate to the employee dashboard
     }

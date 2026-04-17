@@ -3,30 +3,44 @@ using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.Configuration;
 
 namespace TestingProject
 {
     internal class Program
     {
-        //readonly static string connectionString = "Server=tcp:timepunch-site-server.database.windows.net,1433;Initial Catalog=TimePunchSiteDB;Persist Security Info=False;User ID=AnthonyFelker;Password=Felker12;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;";
-
         static void Main(string[] _)
         {
-            var sqlBuilder = new SqlConnectionStringBuilder
-            {
-                DataSource = "timepunch-site-server.database.windows.net,1433",
-                UserID = "AnthonyFelker",
-                Password = "Felker12",
-                InitialCatalog = "TimePunchSiteDB",
-                ConnectTimeout = 30
-            };
+            //load the configuration from user secrets
+            IConfiguration config = new ConfigurationBuilder()
+                .AddUserSecrets<Program>() // Searches the assembly for the UserSecretsId
+                .Build();
 
-            var connectionString = sqlBuilder.ConnectionString;
+            if (config == null)
+            {
+                Console.WriteLine("Failed to build configuration.");
+                return;
+            }
+
+            string connectionString = config.GetConnectionString("TimePunchDB") ?? string.Empty;
+
+            Console.WriteLine("Attempting to retrieve connection string...");
+
+            if (connectionString == null || connectionString == string.Empty)
+            {
+                Console.WriteLine("Failed to retrieve connection string.");
+                return;
+            }
+
+            Console.WriteLine("Connection string retrieved successfully!");
 
             //Console.WriteLine($"\n===test===\n");
 
             Console.WriteLine("\nLog in was successful for ID 1: " + CheckLogin(connectionString, 1, "password1"));
             Console.WriteLine("\nLog in was successful for ID 2: " + CheckLogin(connectionString, 2, "password2"));
+            var test = CheckLogin(connectionString, 3, "Password1");
+
+            Console.WriteLine($"Log in was successful for ID 3: {test}");
             Console.WriteLine();
 
             //Console.WriteLine($"\n===test===\n");
@@ -39,9 +53,6 @@ namespace TestingProject
             TestQuery2(connectionString);
             TestQuery(connectionString);
 
-            var test = CheckLogin(connectionString, 3, "Password1");
-
-            Console.WriteLine($"Log in was successful for ID 3: {test}");
 
             Console.ReadLine(); //keep the console open until the user presses Enter
         }

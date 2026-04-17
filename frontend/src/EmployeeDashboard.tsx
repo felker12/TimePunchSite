@@ -13,7 +13,7 @@ function EmployeeDashboard() {
     const mostRecentPunch = punches.length > 0 ? punches[punches.length - 1] : null;
 
     //Navigation logic
-    const navigate = useNavigate(); //Get the navigate function from react-router-dom
+    const navigate = useNavigate(); 
     const handleNavigation = () => {
         navigate('/employee-login'); //Navigate to the employee dashboard
     }

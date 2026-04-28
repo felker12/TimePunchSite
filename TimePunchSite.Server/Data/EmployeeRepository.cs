@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using System.Data;
+using System.Reflection.Metadata.Ecma335;
 using TimePunchSite.Server.Security;
 
 namespace TimePunchSite.Server.Data;
@@ -35,6 +36,46 @@ public class EmployeeRepository(DatabaseService database, PasswordService passwo
         }
 
         return false;
+    }
+
+    public bool PerformPunchAction(int id, string actionType)
+    {
+        if (id < 1 || string.IsNullOrEmpty(actionType))
+            return false;
+
+        string query = actionType.ToLower() switch
+        {
+            "clock-in" => "INSERT INTO dbo.TimePunches (EmployeeID, ClockIn) VALUES (@id, GETDATE())",
+
+            "clock-out" => @"UPDATE dbo.TimePunches SET ClockOut = GETDATE() 
+                         WHERE TimePunchID = (SELECT TOP 1 TimePunchID FROM dbo.TimePunches 
+                                              WHERE EmployeeID = @id AND ClockOut IS NULL 
+                                              ORDER BY ClockIn DESC)",
+
+            "break-start" => @"UPDATE dbo.TimePunches SET BreakStart = GETDATE() 
+                           WHERE EmployeeID = @id AND ClockOut IS NULL AND BreakStart IS NULL",
+
+            "break-end" => @"UPDATE dbo.TimePunches SET BreakEnd = GETDATE() 
+                 WHERE EmployeeID = @id 
+                 AND ClockOut IS NULL 
+                 AND BreakStart IS NOT NULL 
+                 AND BreakEnd IS NULL",
+
+            _ => throw new ArgumentException("Invalid punch action type", nameof(actionType))
+        };
+
+        if (query == null)
+            return false;
+
+        using var connection = _database.CreateConnection();
+
+        using var command = new SqlCommand(query, connection);
+        command.Parameters.Add("@id", SqlDbType.Int).Value = id;
+
+        connection.Open();
+
+        int rowsAffected = command.ExecuteNonQuery();
+        return rowsAffected > 0;
     }
 
     public List<TimePunchData> GetTimePunchDataList(int id)

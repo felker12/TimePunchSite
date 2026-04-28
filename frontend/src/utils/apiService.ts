@@ -23,5 +23,14 @@ export const apiService = {
         if (!response.ok) throw new Error("Failed to verify ID");
         const data = await response.json();
         return data.id;
+    },
+
+    async performPunch(actionType: string): Promise<void> {
+        const response = await fetch('/api/perform-punch', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ actionType })
+        });
+        if (!response.ok) throw new Error("Failed to perform punch");
     }
 };

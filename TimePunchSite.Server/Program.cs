@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
+using System.Diagnostics;
 using System.Security.Claims;
 using System.Text;
 using TimePunchSite.Server.Data;
@@ -19,11 +20,11 @@ builder.Services.AddProblemDetails();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-// Configure JWT authentication
+//Configure JWT authentication
 var jwtKey = builder.Configuration["Jwt:Key"];
 var key = Encoding.UTF8.GetBytes(jwtKey!);
 
-// Set up authentication with JWT Bearer tokens
+//Set up authentication with JWT Bearer tokens
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -44,23 +45,21 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Add authorization services
+//Add authorization services
 builder.Services.AddAuthorization();
 
-// Add the DatabaseService to the dependency injection container
-// scoped lifetime is appropriate for database services to ensure a new instance per request
+//Add the DatabaseService to the dependency injection container
+//scoped lifetime is appropriate for database services to ensure a new instance per request
 builder.Services.AddScoped<DatabaseService>();
 builder.Services.AddScoped<PasswordService>();
 builder.Services.AddScoped<EmployeeRepository>();
 
-// Add the JwtService to the dependency injection container
+//Add the JwtService to the dependency injection container
 builder.Services.AddScoped<JwtService>();
-
-//var connectionString = builder.Configuration.GetConnectionString("TimePunchDB");
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+//Configure the HTTP request pipeline.
 app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
@@ -70,7 +69,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseOutputCache();
 
-// Enable authentication and authorization middleware
+//Enable authentication and authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -78,12 +77,11 @@ var api = app.MapGroup("/api");
 
 api.MapPost("check-login", (LoginRequest data, EmployeeRepository repo, JwtService jwtService) =>
 {
-    // Validate inputs
+    //Validate inputs
     if (data.Id <= 0 || string.IsNullOrEmpty(data.Password))
         return Results.BadRequest("Invalid input data.");
 
-    // Check login credentials against the database
-    //bool isValid = DataLayer.CheckLogin(connectionString, data.Id, data.Password);
+    //Check login credentials against the database
     bool isValid = repo.CheckLogin(data.Id, data.Password);
 
     if (!isValid)
@@ -113,6 +111,22 @@ api.MapPost("get-user-id", [Authorize] (ClaimsPrincipal user) =>
 {
     return Results.Ok(new { id = getUserIdFromClaims(user) });
 }).WithName("GetId");
+
+
+api.MapPost("perform-punch", [Authorize] (TimePunchAction action, ClaimsPrincipal user, EmployeeRepository repo) =>
+{
+    int id = getUserIdFromClaims(user);
+    // Implementation for performing an action
+    Debug.WriteLine($"Performing punch action for user {id}");
+    Debug.WriteLine($"Action Type: {action.ActionType}");
+
+    bool success = repo.PerformPunchAction(id, action.ActionType);
+
+    if (!success)
+        return Results.BadRequest("Failed to perform punch action.");
+
+    return Results.Ok();
+});
 
 app.MapDefaultEndpoints();
 

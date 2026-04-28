@@ -19,44 +19,52 @@ function EmployeeDashboard() {
     }
 
     const handlePunchAction = async (actionType: string) => {
+        //TODO: test this and remove the console logs
+
         console.log(`Performing action: ${actionType} for user ${verifiedUserID}`);
-        
-        //TODO: Implement the logic to perform the punch action based on the actionType parameter
-        // Here will call apiService.performPunch(actionType)
-        // and then re-run loadDash() to refresh the UI
+
+        try {
+            await apiService.performPunch(actionType); //Call shared service to perform the punch action
+
+            await loadDash(); //Refresh the dashboard data after performing the punch action
+        } catch (error) {
+            alert("Failed to record time punch. Please try again.");
+        }
+
+        console.log(`Action ${actionType} performed successfully. Refreshing dashboard...`);
+    };
+
+    const loadDash = async () => {
+        try {
+            //Call shared service
+            const [id, punchData] = await Promise.all([
+                apiService.getVerifiedUserID(),
+                apiService.getTimePunches()
+            ]);
+
+            //Set states
+            setVerifiedUserID(id.toString());
+            setAuthStatus(true);
+
+            //Determine shift status based on most recent punch
+            if (punchData.length > 0) {
+                //Sort ascending so the last index is the latest
+                const sorted = [...punchData].sort((a, b) =>
+                    new Date(a.clockIn).getTime() - new Date(b.clockIn).getTime()
+                );
+                setPunches(sorted);
+                setShiftStatus(getShiftStatus(sorted[sorted.length - 1]));
+            } else {
+                setShiftStatus("Clocked Out"); //Default state if brand new employee
+            }
+        } catch (error) {
+            console.error("Auth failed:", error);
+            setAuthStatus(false);
+            handleNavigation(); //Redirect to login if auth fails
+        }
     };
 
     useEffect(() => {
-        const loadDash = async () => {
-            try {
-                //Call shared service
-                const [id, punchData] = await Promise.all([
-                    apiService.getVerifiedUserID(),
-                    apiService.getTimePunches()
-                ]);
-
-                //Set states
-                setVerifiedUserID(id.toString());
-                setAuthStatus(true);
-
-                //Determine shift status based on most recent punch
-                if (punchData.length > 0) {
-                    //Sort ascending so the last index is the latest
-                    const sorted = [...punchData].sort((a, b) =>
-                        new Date(a.clockIn).getTime() - new Date(b.clockIn).getTime()
-                    );
-                    setPunches(sorted);
-                    setShiftStatus(getShiftStatus(sorted[sorted.length - 1]));
-                } else {
-                    setShiftStatus("Clocked Out"); //Default state if brand new employee
-                }
-            } catch (error) {
-                console.error("Auth failed:", error);
-                setAuthStatus(false);
-                handleNavigation(); //Redirect to login if auth fails
-            }
-        };
-
         loadDash();
     }, []);
 

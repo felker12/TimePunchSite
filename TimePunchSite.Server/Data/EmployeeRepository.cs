@@ -21,7 +21,21 @@ public class EmployeeRepository(DatabaseService database, PasswordService passwo
         using var command = new SqlCommand(query, connection);
         command.Parameters.Add("@id", SqlDbType.Int).Value = id;
 
-        connection.Open();
+        int tryCount = 0;
+
+        try
+        {
+            connection.Open();
+
+        }
+        catch (SqlException)
+        {
+           if(tryCount < 1)
+            {
+                tryCount++;
+                connection.Open();
+            }
+        }
 
         using var reader = command.ExecuteReader();
 
@@ -81,7 +95,11 @@ public class EmployeeRepository(DatabaseService database, PasswordService passwo
         List<TimePunchData> punches = [];
 
         using var connection = _database.CreateConnection();
-        const string query = "SELECT EmployeeID, ClockIn, ClockOut, BreakStart, BreakEnd FROM dbo.TimePunches WHERE EmployeeID = @id ORDER BY ClockIn DESC";
+        const string query = "" +
+            "SELECT EmployeeID, ClockIn, ClockOut, BreakStart, BreakEnd " +
+            "FROM dbo.TimePunches " +
+            "WHERE EmployeeID = @id " +
+            "ORDER BY ClockIn DESC";
 
         using var command = new SqlCommand(query, connection);
         command.Parameters.Add("@id", SqlDbType.Int).Value = id;

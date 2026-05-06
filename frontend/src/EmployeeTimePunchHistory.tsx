@@ -1,9 +1,8 @@
-import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import './App.css';
 import { type TimePunch, formatTime, getShiftStatus } from '../src/utils/TimePunchScripts'; 
 import { apiService } from '../src/utils/apiService'; 
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom';
 
 function EmployeeTimePunchHistory() {
     const [punches, setPunches] = useState<TimePunch[]>([]);
@@ -36,55 +35,40 @@ function EmployeeTimePunchHistory() {
     }, []);
 
   return (
-      <div className="app-container">
-          <header className="app-header">
-              <nav className="nav-links">
-                  <Link to="/employee-login" className="nav-link-item">
-                      Logout
-                  </Link>
-                  <Link to="/employee-dashboard" className="nav-link-item">
-                      Employee Dashboard
-                  </Link>
-              </nav>
-          </header>
-
-          <main className="main-content">
-              <div className="card" style={{ minWidth: '400px', width: '70%' }}>
-                  <h2>Employee {verifiedUserID}'s Time History</h2>
-                  {punches.length > 0 ? (
-                      <table className="time-table">
-                          <thead>
-                              <tr>
-                                  <th>Date</th>
-                                  <th>Status</th>
-                                  <th>Clock In</th>
-                                  <th>Break</th>
-                                  <th>Clock Out</th>
-                              </tr>
-                          </thead>
-                          <tbody>
-                              {punches.map((p, index) => (
-                                  <tr key={index}>
-                                      <td>{new Date(p.clockIn).toLocaleDateString()}</td>
-                                      <td>
-                                          <span className={`status-badge ${getShiftStatus(p).toLowerCase().replace(' ', '-')}`}>
-                                              {getShiftStatus(p)}
-                                          </span>
-                                      </td>
-                                      <td>{formatTime(p.clockIn)}</td>
-                                      <td>
-                                          {p.breakStart ? `${formatTime(p.breakStart)} - ${formatTime(p.breakEnd)}` : "No Break"}
-                                      </td>
-                                      <td>{formatTime(p.clockOut)}</td>
-                                  </tr>
-                              ))}
-                          </tbody>
-                      </table>
-                  ) : (
-                      <p>No punch history found.</p>
-                  )}
-              </div>
-          </main>
+      <div className="card" style={{ minWidth: '400px', width: '70%' }}>
+          <h2>Employee {verifiedUserID}'s Time History</h2>
+          {punches.length > 0 ? (
+              <table className="time-table">
+                  <thead>
+                      <tr>
+                          <th>Date</th>
+                          <th>Status</th>
+                          <th>Clock In</th>
+                          <th>Break</th>
+                          <th>Clock Out</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {punches.map((p, index) => (
+                          <tr key={index}>
+                              <td>{new Date(p.clockIn).toLocaleDateString()}</td>
+                              <td>
+                                  <span className={`status-badge ${getShiftStatus(p).toLowerCase().replace(' ', '-')}`}>
+                                      {getShiftStatus(p)}
+                                  </span>
+                              </td>
+                              <td>{formatTime(p.clockIn)}</td>
+                              <td>
+                                  {p.breakStart ? `${formatTime(p.breakStart)} - ${formatTime(p.breakEnd)}` : "No Break"}
+                              </td>
+                              <td>{formatTime(p.clockOut)}</td>
+                          </tr>
+                      ))}
+                  </tbody>
+              </table>
+          ) : (
+              <p>No punch history found.</p>
+          )}
       </div>
   );
 }

@@ -6,15 +6,23 @@ import App from './App.tsx'
 import EmployeeLogIn from './EmployeeLogIn.tsx'
 import EmployeeDashboard from './EmployeeDashboard.tsx'
 import EmployeeTimePunchHistory from './EmployeeTimePunchHistory.tsx'
+import Layout from './shared/Layout.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
         <Router>
             <Routes>
-                <Route path="/" element={<App />} />
-                <Route path="/employee-login" element={<EmployeeLogIn />} />
-                <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
-                <Route path="/employee-time-punch-history" element={<EmployeeTimePunchHistory />} />
+              {/* Public Landing Page */}
+              <Route path="/" element={<App />} />
+
+              {/* Login - No Header/Footer needed here */}
+              <Route path="/employee-login" element={<EmployeeLogIn />} />
+
+              {/* Internal Pages - Wrapped in the Layout */}
+              <Route element={<Layout />}>
+                  <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
+                  <Route path="/employee-time-punch-history" element={<EmployeeTimePunchHistory />} />
+              </Route>
             </Routes>
         </Router>
   </StrictMode>,

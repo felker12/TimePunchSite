@@ -1,9 +1,8 @@
-import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import './App.css';
 import { type TimePunch, formatTime, getShiftStatus, getBreakCompleted,  type ShiftStatus } from '../src/utils/TimePunchScripts';
 import { apiService } from '../src/utils/apiService'; 
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom';
 
 function EmployeeDashboard() {
     const [authStatus, setAuthStatus] = useState(false);
@@ -70,34 +69,19 @@ function EmployeeDashboard() {
     }, []);
 
     return (
-        <div className="app-container">
-            <header className="app-header">
-                <nav className="nav-links">
-                    <Link to="/employee-login" className="nav-link-item">
-                        Logout
-                    </Link>
-                    <Link to="/employee-time-punch-history" className="nav-link-item">
-                        Time Punch History
-                    </Link>
-                </nav>
-            </header>
+        <div className="card" style={{ minWidth: '300px' }}>
+            {!authStatus && <p>Checking authorization...</p>}
+            {/* authStatus ? <p>Authorized</p> : <p>Checking authorization...</p> */}
+            <h2>Employee {verifiedUserID}</h2>
+            <p>Status: <strong>{shiftStatus}</strong></p>
 
-            <main className="main-content">
-                <div className="card" style={{ minWidth: '300px' }}>
-                    {!authStatus && <p>Checking authorization...</p>}
-                    {/* authStatus ? <p>Authorized</p> : <p>Checking authorization...</p> */}
-                    <h2>Employee {verifiedUserID}</h2>
-                    <p>Status: <strong>{shiftStatus}</strong></p>
+            <ClockInOutStatus shiftStatus={shiftStatus} breakOver={breakCompleted} onAction={handlePunchAction} />
 
-                    <ClockInOutStatus shiftStatus={shiftStatus} breakOver={breakCompleted} onAction={handlePunchAction} />
-
-                    {mostRecentPunch && (
-                        <p style={{ fontSize: '12px', color: '#666', marginTop: '20px' }}>
-                            Last Activity: {new Date(mostRecentPunch.clockIn).toLocaleDateString() } at { formatTime(mostRecentPunch.clockIn)}
-                        </p>
-                    )}
-                </div>
-            </main>
+            {mostRecentPunch && (
+                <p style={{ fontSize: '12px', color: '#666', marginTop: '20px' }}>
+                    Last Activity: {new Date(mostRecentPunch.clockIn).toLocaleDateString()} at {formatTime(mostRecentPunch.clockIn)}
+                </p>
+            )}
         </div>
     );
 }

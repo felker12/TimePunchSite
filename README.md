@@ -1,4 +1,4 @@
-# Aspire Time Clock System
+# Time Clock System
 
 A full-stack, secure **Time Tracking Application** designed for employees to manage their work shifts and breaks. This system utilizes a reactive state machine to determine employee status in real-time.
 

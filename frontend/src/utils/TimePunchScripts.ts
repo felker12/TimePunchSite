@@ -22,3 +22,12 @@ export const getShiftStatus = (punch: TimePunch): ShiftStatus => {
     }
     return "Clocked Out";
 };
+
+export const getBreakCompleted = (punch: TimePunch): boolean => {
+    if (punch.breakStart && punch.breakEnd)
+    {
+        return true;
+    }
+    
+    return false;
+}

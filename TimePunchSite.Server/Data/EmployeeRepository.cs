@@ -1,10 +1,8 @@
 ﻿using Microsoft.Data.SqlClient;
 using System.Data;
-using System.Reflection.Metadata.Ecma335;
 using TimePunchSite.Server.Security;
 
 namespace TimePunchSite.Server.Data;
-
 public class EmployeeRepository(DatabaseService database, PasswordService passwordService)
 {
     private readonly DatabaseService _database = database;

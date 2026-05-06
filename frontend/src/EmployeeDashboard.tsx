@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import './App.css';
-import { type TimePunch, formatTime, getShiftStatus,  type ShiftStatus } from '../src/utils/TimePunchScripts';
+import { type TimePunch, formatTime, getShiftStatus, getBreakCompleted,  type ShiftStatus } from '../src/utils/TimePunchScripts';
 import { apiService } from '../src/utils/apiService'; 
 import { useNavigate } from 'react-router-dom'
 
@@ -10,6 +10,7 @@ function EmployeeDashboard() {
     const [verifiedUserID, setVerifiedUserID] = useState<string | null>(null);
     const [punches, setPunches] = useState<TimePunch[]>([]);
     const [shiftStatus, setShiftStatus] = useState<ShiftStatus | null>(null);
+    const [breakCompleted, setBreakCompleted] = useState<boolean>(false);
     const mostRecentPunch = punches.length > 0 ? punches[punches.length - 1] : null;
 
     //Navigation logic
@@ -19,10 +20,6 @@ function EmployeeDashboard() {
     }
 
     const handlePunchAction = async (actionType: string) => {
-        //TODO: test this and remove the console logs
-
-        console.log(`Performing action: ${actionType} for user ${verifiedUserID}`);
-
         try {
             await apiService.performPunch(actionType); //Call shared service to perform the punch action
 
@@ -53,7 +50,11 @@ function EmployeeDashboard() {
                     new Date(a.clockIn).getTime() - new Date(b.clockIn).getTime()
                 );
                 setPunches(sorted);
-                setShiftStatus(getShiftStatus(sorted[sorted.length - 1]));
+
+                const latestPunch = sorted[sorted.length - 1];
+
+                setShiftStatus(getShiftStatus(latestPunch));
+                setBreakCompleted(getBreakCompleted(latestPunch));
             } else {
                 setShiftStatus("Clocked Out"); //Default state if brand new employee
             }
@@ -88,7 +89,7 @@ function EmployeeDashboard() {
                     <h2>Employee {verifiedUserID}</h2>
                     <p>Status: <strong>{shiftStatus}</strong></p>
 
-                    <ClockInOutStatus shiftStatus={shiftStatus} onAction={handlePunchAction} />
+                    <ClockInOutStatus shiftStatus={shiftStatus} breakOver={breakCompleted} onAction={handlePunchAction} />
 
                     {mostRecentPunch && (
                         <p style={{ fontSize: '12px', color: '#666', marginTop: '20px' }}>
@@ -101,7 +102,7 @@ function EmployeeDashboard() {
     );
 }
 
-function ClockInOutStatus({ shiftStatus, onAction }: { shiftStatus: ShiftStatus | null, onAction: (actionType: string) => void }) {
+function ClockInOutStatus({ shiftStatus, breakOver, onAction }: { shiftStatus: ShiftStatus | null, breakOver: boolean, onAction: (actionType: string) => void }) {
     //Helper to keep the JSX clean
     const containerStyle = { display: 'flex', flexDirection: 'column' as const, gap: '10px', marginTop: '15px' };
 
@@ -110,7 +111,7 @@ function ClockInOutStatus({ shiftStatus, onAction }: { shiftStatus: ShiftStatus 
             return (
                 <div style={containerStyle}>
                     <button className="action-button" onClick={() => onAction('clock-out')}>Clock Out</button>
-                    <button className="action-button" onClick={() => onAction('break-start')}>Start Break</button>
+                    {!breakOver && <button className="action-button" onClick={() => onAction('break-start')}>Start Break</button>}
                 </div>
             );
         case "Clocked Out":

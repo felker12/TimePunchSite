@@ -11,7 +11,7 @@ public class JwtService(IConfiguration config)
 
     public string GenerateToken(int employeeId)
     {
-        // Retrieve values and ensure they aren't null
+        //Retrieve values and ensure they aren't null
         var jwtKey = _config["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is missing in configuration");
         var issuer = _config["Jwt:Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer is missing in configuration");
         var audience = _config["Jwt:Audience"] ?? throw new InvalidOperationException("Jwt:Audience is missing in configuration");

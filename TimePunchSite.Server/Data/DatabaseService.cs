@@ -1,7 +1,7 @@
-﻿namespace TimePunchSite.Server.Data
-{
-    using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 
+namespace TimePunchSite.Server.Data
+{
     public class DatabaseService(IConfiguration configuration)
     {
         private readonly string _connectionString = configuration.GetConnectionString("TimePunchDB")

@@ -57,6 +57,3 @@ The application functions as a **State Machine**. The UI dynamically updates bas
     npm install
     npm run dev
     ```
-
----
-*© 2026 Aspire Development Team*

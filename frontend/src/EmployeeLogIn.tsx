@@ -110,6 +110,10 @@ function LogInPage() {
                     </div>
                 </div>
             </main>
+
+            <footer className="app-footer">
+                <p>© 2026 Aspire Time Clock System</p>
+            </footer>
         </div>
     );
 }

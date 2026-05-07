@@ -98,10 +98,10 @@ api.MapPost("check-login", (LoginRequest data, EmployeeRepository repo, JwtServi
 .WithName("CheckLogin");
 
 //Endpoint requires authentication
-api.MapPost("get-timepunches-data", [Authorize] (EmployeeRepository repo, ClaimsPrincipal user) =>
+api.MapPost("get-timepunches-data", [Authorize] (PunchDataRequest data, EmployeeRepository repo, ClaimsPrincipal user) =>
 {
     int userId = getUserIdFromClaims(user);
-    var punches = repo.GetTimePunchDataList(userId);
+    var punches = repo.GetTimePunchDataList(userId, data.PunchLimit);
 
     return Results.Ok(punches);
 })

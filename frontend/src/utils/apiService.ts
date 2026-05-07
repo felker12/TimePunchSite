@@ -6,10 +6,11 @@ const getHeaders = () => ({
 });
 
 export const apiService = {
-    async getTimePunches(): Promise<TimePunch[]> {
+    async getTimePunches(punchLimit: number): Promise<TimePunch[]> {
         const response = await fetch('/api/get-timepunches-data', {
             method: 'POST',
-            headers: getHeaders()
+            headers: getHeaders(),
+            body: JSON.stringify({ punchLimit })
         });
         if (!response.ok) throw new Error("Failed to fetch punches");
         return response.json();

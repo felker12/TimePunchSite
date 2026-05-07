@@ -7,10 +7,9 @@ import { useNavigate } from 'react-router-dom';
 function EmployeeDashboard() {
     const [authStatus, setAuthStatus] = useState(false);
     const [verifiedUserID, setVerifiedUserID] = useState<string | null>(null);
-    const [punches, setPunches] = useState<TimePunch[]>([]);
     const [shiftStatus, setShiftStatus] = useState<ShiftStatus | null>(null);
     const [breakCompleted, setBreakCompleted] = useState<boolean>(false);
-    const mostRecentPunch = punches.length > 0 ? punches[punches.length - 1] : null;
+    const [mostRecentPunch, setMostRecentPunch] = useState<TimePunch | null>(null);
 
     //Navigation logic
     const navigate = useNavigate(); 
@@ -35,7 +34,7 @@ function EmployeeDashboard() {
             //Call shared service
             const [id, punchData] = await Promise.all([
                 apiService.getVerifiedUserID(),
-                apiService.getTimePunches()
+                apiService.getTimePunches(1)
             ]);
 
             //Set states
@@ -44,18 +43,15 @@ function EmployeeDashboard() {
 
             //Determine shift status based on most recent punch
             if (punchData.length > 0) {
-                //Sort ascending so the last index is the latest
-                const sorted = [...punchData].sort((a, b) =>
-                    new Date(a.clockIn).getTime() - new Date(b.clockIn).getTime()
-                );
-                setPunches(sorted);
+                const latestPunch = punchData[0]; //Get the most recent punch (should be the only one since we requested 1 punch)
 
-                const latestPunch = sorted[sorted.length - 1];
-
+                setMostRecentPunch(latestPunch);
                 setShiftStatus(getShiftStatus(latestPunch));
                 setBreakCompleted(getBreakCompleted(latestPunch));
             } else {
                 setShiftStatus("Clocked Out"); //Default state if brand new employee
+                setBreakCompleted(false);
+                setMostRecentPunch(null);
             }
         } catch (error) {
             console.error("Auth failed:", error);
@@ -71,7 +67,6 @@ function EmployeeDashboard() {
     return (
         <div className="card" style={{ minWidth: '300px' }}>
             {!authStatus && <p>Checking authorization...</p>}
-            {/* authStatus ? <p>Authorized</p> : <p>Checking authorization...</p> */}
             <h2>Employee {verifiedUserID}</h2>
             <p>Status: <strong>{shiftStatus}</strong></p>
 

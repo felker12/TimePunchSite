@@ -20,7 +20,7 @@ function EmployeeTimePunchHistory() {
                 //Call shared service
                 const [id, punchData] = await Promise.all([
                     apiService.getVerifiedUserID(),
-                    apiService.getTimePunches()
+                    apiService.getTimePunches(2000) //Request a large number of punches to get the full history, the backend will handle limiting it to the actual number of punches available for that user
                 ]);
                 
                 setVerifiedUserID(id);

@@ -21,21 +21,7 @@ public class EmployeeRepository(DatabaseService database, PasswordService passwo
         using var command = new SqlCommand(query, connection);
         command.Parameters.Add("@id", SqlDbType.Int).Value = id;
 
-        int tryCount = 0;
-
-        try
-        {
-            connection.Open();
-
-        }
-        catch (SqlException)
-        {
-           if(tryCount < 1)
-            {
-                tryCount++;
-                connection.Open();
-            }
-        }
+        connection.Open();
 
         using var reader = command.ExecuteReader();
 
@@ -90,19 +76,20 @@ public class EmployeeRepository(DatabaseService database, PasswordService passwo
         return rowsAffected > 0;
     }
 
-    public List<TimePunchData> GetTimePunchDataList(int id)
+    public List<TimePunchData> GetTimePunchDataList(int id, int limit = 2000)
     {
         List<TimePunchData> punches = [];
 
         using var connection = _database.CreateConnection();
-        const string query = "" +
-            "SELECT EmployeeID, ClockIn, ClockOut, BreakStart, BreakEnd " +
-            "FROM dbo.TimePunches " +
-            "WHERE EmployeeID = @id " +
-            "ORDER BY ClockIn DESC";
+        const string query = @"
+            SELECT TOP (@limit) EmployeeID, ClockIn, ClockOut, BreakStart, BreakEnd
+            FROM dbo.TimePunches
+            WHERE EmployeeID = @id
+            ORDER BY ClockIn DESC";
 
         using var command = new SqlCommand(query, connection);
         command.Parameters.Add("@id", SqlDbType.Int).Value = id;
+        command.Parameters.Add("@limit", SqlDbType.Int).Value = limit;
         connection.Open();
 
         using var reader = command.ExecuteReader();
@@ -118,77 +105,5 @@ public class EmployeeRepository(DatabaseService database, PasswordService passwo
         }
 
         return punches;
-    }
-
-    public List<string> GetTimePunches(int id)
-    {
-        List<string> punches = [];
-
-        if (id < 1) 
-            return punches;
-
-        using var connection = _database.CreateConnection();
-
-        // Querying all timing columns for the specific employee
-        const string query = @"
-            SELECT ClockIn, ClockOut, BreakStart, BreakEnd 
-            FROM dbo.TimePunches 
-            WHERE EmployeeID = @id 
-            ORDER BY ClockIn DESC";
-
-        using var command = new SqlCommand(query, connection);
-        command.Parameters.Add("@id", SqlDbType.Int).Value = id;
-
-        connection.Open();
-        using var reader = command.ExecuteReader();
-
-        while (reader.Read())
-        {
-            //ClockIn is NOT NULL, so get it directly
-            DateTime clockIn = reader.GetDateTime(0);
-            string entry = $"In: {clockIn:MM/dd/yyyy hh:mm tt}";
-
-            //ClockOut, BreakStart, and BreakEnd are NULLABLE, so check for DBNull
-            if (!reader.IsDBNull(1))
-                entry += $" | Out: {reader.GetDateTime(1):hh:mm tt}";
-
-            if (!reader.IsDBNull(2))
-                entry += $" | Break: {reader.GetDateTime(2):hh:mm tt}";
-
-            punches.Add(entry);
-        }
-
-        return punches;
-    }
-
-    public string GetMostRecentTimePunch(int id)
-    {
-        if (id < 1) 
-            return "No punches found.";
-
-        using var connection = _database.CreateConnection();
-        const string query = @"
-            SELECT TOP 1 ClockIn, ClockOut, BreakStart, BreakEnd 
-            FROM dbo.TimePunches 
-            WHERE EmployeeID = @id 
-            ORDER BY ClockIn DESC";
-
-        using var command = new SqlCommand(query, connection);
-        command.Parameters.Add("@id", SqlDbType.Int).Value = id;
-
-        connection.Open();
-        using var reader = command.ExecuteReader();
-
-        if (reader.Read())
-        {
-            DateTime clockIn = reader.GetDateTime(0);
-            string entry = $"In: {clockIn:MM/dd/yyyy hh:mm tt}";
-            if (!reader.IsDBNull(1))
-                entry += $" | Out: {reader.GetDateTime(1):hh:mm tt}";
-            if (!reader.IsDBNull(2))
-                entry += $" | Break: {reader.GetDateTime(2):hh:mm tt}";
-            return entry;
-        }
-        return "No punches found.";
     }
 }

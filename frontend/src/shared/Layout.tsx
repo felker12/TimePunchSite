@@ -16,7 +16,7 @@ export default function Layout() {
             </main>
 
             <footer className="app-footer">
-                <p>© 2026 Aspire Time Clock System</p>
+                <p>© 2026 Time Clock System</p>
             </footer>
         </div>
     );

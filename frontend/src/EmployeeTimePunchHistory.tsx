@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-import { type TimePunch, formatTime, getShiftStatus } from '../src/utils/TimePunchScripts'; 
+import { type TimePunch, formatTime, getShiftStatus, formatDate } from '../src/utils/TimePunchScripts'; 
 import { apiService } from '../src/utils/apiService'; 
 import { useNavigate } from 'react-router-dom';
 
@@ -78,7 +78,7 @@ function EmployeeTimePunchHistory() {
                   <tbody>
                       {punches.map((p, index) => (
                           <tr key={index}>
-                              <td>{new Date(p.clockIn).toLocaleDateString()}</td>
+                              <td>{formatDate(p.clockIn)}</td>
                               <td>
                                   <span className={`status-badge ${getShiftStatus(p).toLowerCase().replace(' ', '-')}`}>
                                       {getShiftStatus(p)}

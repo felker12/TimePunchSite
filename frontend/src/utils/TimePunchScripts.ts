@@ -11,7 +11,19 @@ export type ShiftStatus = "Working" | "On Break" | "Clocked Out";
 //Format the time for display, showing only hours and minutes. If the time is null, return a placeholder.
 export const formatTime = (dateStr: string | null) => {
     if (!dateStr) return "--";
-    return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    //If it's a string from the DB, append 'Z' to force it to be treated as UTC
+    const date = new Date(ensureUTC(dateStr));
+
+    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
+export const ensureUTC = (dateStr: string): string => {
+    return dateStr.endsWith('Z') ? dateStr : dateStr + 'Z';
+};  
+
+export const formatDate = (dateStr: string) => {
+    return new Date(ensureUTC(dateStr)).toLocaleDateString();
 };
 
 //Determine the current status of a shift based on the time punch data.

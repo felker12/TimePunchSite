@@ -11,6 +11,9 @@ A full-stack, secure **Time Tracking Application** designed for employees to man
     *   **Single Break Rule**: Automatically hides the "Start Break" option once a break has been completed for the current shift.
 *   **Shared Layout Architecture**: Uses a centralized `Layout` and `SharedHeader` with React Router `Outlet` to provide a consistent UI across all pages while reducing code duplication.
 *   **Detailed History**: A sortable table view of all historical clock-in, clock-out, and break timestamps.
+* 	**UTC Time Synchronization**: Stores all punches in UTC using `GETUTCDATE()` and converts to local time in the browser via `ensureUTC` helpers.
+* 	**Pagination & Limits**: Users can toggle between 5, 10, 25, or all records, with the frontend triggering optimized `TOP (N)` SQL queries.
+* 	**Real-time Status State Machine**: Automatically determines work status (Working, On Break, Clocked Out) based on a single-pass interpretation of the most recent punch.
 
 ## 🛠️ Tech Stack
 

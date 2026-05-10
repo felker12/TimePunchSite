@@ -43,17 +43,17 @@ public class EmployeeRepository(DatabaseService database, PasswordService passwo
 
         string query = actionType.ToLower() switch
         {
-            "clock-in" => "INSERT INTO dbo.TimePunches (EmployeeID, ClockIn) VALUES (@id, GETDATE())",
+            "clock-in" => "INSERT INTO dbo.TimePunches (EmployeeID, ClockIn) VALUES (@id, GETUTCDATE())",
 
-            "clock-out" => @"UPDATE dbo.TimePunches SET ClockOut = GETDATE() 
+            "clock-out" => @"UPDATE dbo.TimePunches SET ClockOut = GETUTCDATE() 
                          WHERE TimePunchID = (SELECT TOP 1 TimePunchID FROM dbo.TimePunches 
                                               WHERE EmployeeID = @id AND ClockOut IS NULL 
                                               ORDER BY ClockIn DESC)",
 
-            "break-start" => @"UPDATE dbo.TimePunches SET BreakStart = GETDATE() 
+            "break-start" => @"UPDATE dbo.TimePunches SET BreakStart = GETUTCDATE() 
                            WHERE EmployeeID = @id AND ClockOut IS NULL AND BreakStart IS NULL",
 
-            "break-end" => @"UPDATE dbo.TimePunches SET BreakEnd = GETDATE() 
+            "break-end" => @"UPDATE dbo.TimePunches SET BreakEnd = GETUTCDATE() 
                  WHERE EmployeeID = @id 
                  AND ClockOut IS NULL 
                  AND BreakStart IS NOT NULL 

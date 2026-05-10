@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import './App.css'
 import { useState, type ChangeEvent } from 'react';
+import { apiService } from '../src/utils/apiService'; 
 
 function LogInPage() {
     //State variables for user name and password
@@ -35,23 +36,14 @@ function LogInPage() {
         setIsLoading(true);
 
         try {
-            const response = await fetch('/api/check-login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id: userID,       
-                    password: password 
-                }),
-            });
+            const { success } = await apiService.login(userID, password);
 
-            const result = await response.json();
-
-            if (response.ok && result.success) {
-                localStorage.setItem("token", result.token); //Store the token in localStorage for future authenticated requests
-
+            if (success) {
                 handleNavigation();
-            } else {
-                alert(result.message || "Login failed. Please check your credentials.");
+                return;
+            }
+            else {
+                alert("Login failed. Please check your credentials.");
             }
         } catch (error) {
             console.error("Network Error:", error);

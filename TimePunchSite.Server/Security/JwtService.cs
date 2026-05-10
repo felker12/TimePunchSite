@@ -9,7 +9,7 @@ public class JwtService(IConfiguration config)
 {
     private readonly IConfiguration _config = config;
 
-    public string GenerateToken(int employeeId)
+    public string GenerateToken(int employeeId, string role)
     {
         //Retrieve values and ensure they aren't null
         var jwtKey = _config["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is missing in configuration");
@@ -22,6 +22,7 @@ public class JwtService(IConfiguration config)
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, employeeId.ToString()),
+            new Claim(ClaimTypes.Role, role),
             new Claim(JwtRegisteredClaimNames.Iss, issuer),
             new Claim(JwtRegisteredClaimNames.Aud, audience)
         };

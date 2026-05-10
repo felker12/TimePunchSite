@@ -10,11 +10,12 @@ function EmployeeDashboard() {
     const [shiftStatus, setShiftStatus] = useState<ShiftStatus | null>(null);
     const [breakCompleted, setBreakCompleted] = useState<boolean>(false);
     const [mostRecentPunch, setMostRecentPunch] = useState<TimePunch | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     //Navigation logic
     const navigate = useNavigate(); 
     const handleNavigation = () => {
-        navigate('/employee-login'); //Navigate to the employee dashboard
+        navigate('/employee-login'); //Navigate to the employee log in page
     }
 
     const handlePunchAction = async (actionType: string) => {
@@ -29,8 +30,9 @@ function EmployeeDashboard() {
         console.log(`Action ${actionType} performed successfully. Refreshing dashboard...`);
     };
 
-    const loadDash = async () => {
+    const loadDash = async (isInitialLoad = false) => {
         try {
+            if (isInitialLoad) setIsLoading(true); 
             //Call shared service
             const [id, punchData] = await Promise.all([
                 apiService.getVerifiedUserID(),
@@ -57,12 +59,16 @@ function EmployeeDashboard() {
             console.error("Auth failed:", error);
             setAuthStatus(false);
             handleNavigation(); //Redirect to login if auth fails
+        } finally {
+            setIsLoading(false)
         }
     };
 
     useEffect(() => {
-        loadDash();
+        loadDash(true);
     }, []);
+
+    if (isLoading) return <p>Verifying credentials...</p>;
 
     return (
         <div className="card" style={{ minWidth: '300px' }}>

@@ -3,20 +3,30 @@ using System.Data;
 using TimePunchSite.Server.Security;
 
 namespace TimePunchSite.Server.Data;
+
+public enum EmployeeRole
+{
+    Employee = 1,
+    Admin = 2,
+    Manager = 3
+}
+
+public record LoginResult(bool Success, EmployeeRole? Role = null);
+
 public class EmployeeRepository(DatabaseService database, PasswordService passwordService)
 {
     private readonly DatabaseService _database = database;
     private readonly PasswordService _passwordService = passwordService;
 
-    public bool CheckLogin(int id, string pass)
+    public LoginResult CheckLogin(int id, string pass)
     {
         if (id < 1 || string.IsNullOrEmpty(pass))
-            return false;
+            return new LoginResult(false);
 
         using var connection = _database.CreateConnection();
 
         const string query =
-            "SELECT PasswordHash, Salt FROM dbo.Employees WHERE ID = @id";
+            "SELECT PasswordHash, Salt, RoleID FROM dbo.Employees WHERE ID = @id";
 
         using var command = new SqlCommand(query, connection);
         command.Parameters.Add("@id", SqlDbType.Int).Value = id;
@@ -30,10 +40,14 @@ public class EmployeeRepository(DatabaseService database, PasswordService passwo
             byte[] storedHash = (byte[])reader["PasswordHash"];
             byte[] storedSalt = (byte[])reader["Salt"];
 
-            return _passwordService.VerifyPassword(pass, storedHash, storedSalt);
+            if(_passwordService.VerifyPassword(pass, storedHash, storedSalt))
+            {
+                EmployeeRole role = (EmployeeRole)reader["RoleID"];
+                return new LoginResult(true, role);
+            }
         }
 
-        return false;
+        return new LoginResult(false);
     }
 
     public bool PerformPunchAction(int id, string actionType)

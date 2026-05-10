@@ -8,6 +8,8 @@ export interface TimePunch {
 
 export type ShiftStatus = "Working" | "On Break" | "Clocked Out";
 
+export type EmployeeRole = "Employee" | "Manager" | "Admin";
+
 //Format the time for display, showing only hours and minutes. If the time is null, return a placeholder.
 export const formatTime = (dateStr: string | null) => {
     if (!dateStr) return "--";

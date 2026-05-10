@@ -1,4 +1,4 @@
-import type { TimePunch } from '../utils/TimePunchScripts';
+import type { EmployeeRole, TimePunch } from '../utils/TimePunchScripts';
 
 const getHeaders = () => ({
     'Content-Type': 'application/json',
@@ -26,6 +26,16 @@ export const apiService = {
         return data.id;
     },
 
+    async getUserRole(): Promise<EmployeeRole> {
+        const response = await fetch('/api/get-user-role', {
+            method: 'POST',
+            headers: getHeaders()
+        });
+        if (!response.ok) throw new Error("Failed to fetch user role");
+        const data = await response.json();
+        return data.role as EmployeeRole;
+    },
+
     async performPunch(actionType: string): Promise<void> {
         const response = await fetch('/api/perform-punch', {
             method: 'POST',
@@ -33,5 +43,25 @@ export const apiService = {
             body: JSON.stringify({ actionType })
         });
         if (!response.ok) throw new Error("Failed to perform punch");
+    },
+
+    async login(userID: number, password: string): Promise<{ success: boolean; role?: EmployeeRole }> {
+        const response = await fetch('/api/check-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: userID,
+                password: password
+            }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            localStorage.setItem("token", result.token);
+            localStorage.setItem("userRole", result.role);
+        }
+
+        return { success: result.success, role: result.role as EmployeeRole};
     }
-};
+}

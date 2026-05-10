@@ -6,6 +6,7 @@ import App from './App.tsx'
 import EmployeeLogIn from './EmployeeLogIn.tsx'
 import EmployeeDashboard from './EmployeeDashboard.tsx'
 import EmployeeTimePunchHistory from './EmployeeTimePunchHistory.tsx'
+import AdminDashboard from './AdminDashboard.tsx'
 import Layout from './shared/Layout.tsx'
 
 createRoot(document.getElementById('root')!).render(
@@ -22,6 +23,7 @@ createRoot(document.getElementById('root')!).render(
               <Route element={<Layout />}>
                   <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
                   <Route path="/employee-time-punch-history" element={<EmployeeTimePunchHistory />} />
+                  <Route path="/admin-dashboard" element={<AdminDashboard />} />
               </Route>
             </Routes>
         </Router>

@@ -82,17 +82,19 @@ api.MapPost("check-login", (LoginRequest data, EmployeeRepository repo, JwtServi
         return Results.BadRequest("Invalid input data.");
 
     //Check login credentials against the database
-    bool isValid = repo.CheckLogin(data.Id, data.Password);
+    //bool isValid = repo.CheckLogin(data.Id, data.Password);
+    LoginResult loginResult = repo.CheckLogin(data.Id, data.Password);
 
-    if (!isValid)
+    if (!loginResult.Success)
         return Results.Json(new { success = false, message = "Invalid ID or Password" }, statusCode: 401);
 
-    var token = jwtService.GenerateToken(data.Id);
+    var token = jwtService.GenerateToken(data.Id, loginResult.Role?.ToString() ?? string.Empty);
 
     return Results.Ok(new
     {
         success = true,
-        token
+        token,
+        role = loginResult.Role?.ToString() ?? "Unknown"
     });
 })
 .WithName("CheckLogin");
@@ -112,6 +114,10 @@ api.MapPost("get-user-id", [Authorize] (ClaimsPrincipal user) =>
     return Results.Ok(new { id = getUserIdFromClaims(user) });
 }).WithName("GetId");
 
+api.MapPost("get-user-role", [Authorize] (ClaimsPrincipal user) =>
+{
+    return Results.Ok(new { role = getUserRoleFromClaims(user).ToString() });
+}).WithName("GetRole");
 
 api.MapPost("perform-punch", [Authorize] (TimePunchAction action, ClaimsPrincipal user, EmployeeRepository repo) =>
 {
@@ -139,4 +145,18 @@ static int getUserIdFromClaims(ClaimsPrincipal user)
     var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
     return userIdClaim == null ? throw new InvalidOperationException("User ID claim is missing.") : int.Parse(userIdClaim.Value);
+}
+
+static EmployeeRole getUserRoleFromClaims(ClaimsPrincipal user)
+{
+    var userRoleClaim = user.FindFirst(ClaimTypes.Role)?.Value;
+
+    EmployeeRole role = userRoleClaim switch
+    {
+        nameof(EmployeeRole.Admin) => EmployeeRole.Admin,
+        nameof(EmployeeRole.Manager) => EmployeeRole.Manager,
+        _ => EmployeeRole.Employee
+    };
+
+    return role;
 }

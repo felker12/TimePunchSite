@@ -1,4 +1,4 @@
-import type { EmployeeRole, TimePunch } from '../utils/TimePunchScripts';
+import type { EmployeeRole, TimePunch, EmployeeView } from '../utils/TimePunchScripts';
 
 const getHeaders = () => ({
     'Content-Type': 'application/json',
@@ -11,6 +11,16 @@ export const apiService = {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify({ punchLimit })
+        });
+        if (!response.ok) throw new Error("Failed to fetch punches");
+        return response.json();
+    },
+
+    async getTimePunchesForWeek(date: Date): Promise<EmployeeView[]> {
+        const response = await fetch('/api/get-timepunches-for-week', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ day: date })
         });
         if (!response.ok) throw new Error("Failed to fetch punches");
         return response.json();

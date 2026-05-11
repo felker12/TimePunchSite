@@ -132,7 +132,13 @@ api.MapPost("perform-punch", [Authorize] (TimePunchAction action, ClaimsPrincipa
         return Results.BadRequest("Failed to perform punch action.");
 
     return Results.Ok();
-});
+}).WithName("PerformPunch");
+
+api.MapPost("get-timepunches-for-week", [Authorize(Roles = "Admin,Manager")] (WeeklyReportRequest data, ClaimsPrincipal user, EmployeeRepository repo) =>
+{
+    var punches = repo.GetEmployeeTimePunchesListForWeek(data.Day);
+    return Results.Ok(punches);
+}).WithName("GetTimePunchesForWeek");
 
 app.MapDefaultEndpoints();
 

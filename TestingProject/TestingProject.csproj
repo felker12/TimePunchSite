@@ -15,4 +15,8 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\TimePunchSite.Server\TimePunchSite.Server.csproj" />
+  </ItemGroup>
+
 </Project>

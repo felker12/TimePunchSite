@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
-import { type EmployeeRole } from './utils/TimePunchScripts';
+import { type EmployeeRole, type EmployeeView, formatDate, formatTime, getShiftStatus, dayOfWeek, getEmployeeFullName } from './utils/TimePunchScripts';
 import { apiService } from '../src/utils/apiService';
 import { useNavigate } from 'react-router-dom';
 
 function AdminDashboard() {
-    const userRole = localStorage.getItem("userRole") as EmployeeRole | null; //temp
-
     const [verifiedId, setVerifiedId] = useState<number | null>(null);
     const [verifiedRole, setVerifiedRole] = useState<EmployeeRole | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [employeeData, setEmployeeData] = useState<EmployeeView[]>([]);
 
     //Navigation logic
     const navigate = useNavigate();
@@ -18,9 +17,10 @@ function AdminDashboard() {
 
     const loadDash = async () => {
         try {
-            const [id, role] = await Promise.all([
+            const [id, role, employees] = await Promise.all([
                 apiService.getVerifiedUserID(),
-                apiService.getUserRole()
+                apiService.getUserRole(),
+                apiService.getTimePunchesForWeek(new Date("2026-05-07")) //Get punches for the current week, the backend will handle determining the actual date range
             ]);
 
             //If the user not an admin or manager, we don't want them to access the admin dashboard, 
@@ -32,6 +32,7 @@ function AdminDashboard() {
 
             setVerifiedId(id);
             setVerifiedRole(role);
+            setEmployeeData(employees);
         } catch (error) {
             console.error("Error loading dashboard data:", error);
             handleNavigation();
@@ -48,7 +49,37 @@ function AdminDashboard() {
 
     return (
         <div className="card">
-            <p>Hello user number: {verifiedId}, role: {userRole}, verified role: {verifiedRole}!</p>
+            <p>Hello user number: {verifiedId}, verified role: {verifiedRole}!</p>
+            <h3>Employee Data</h3>
+
+            <table className="time-table">
+                <tr>
+                    <th scope="employeeName"></th>
+                    <th>Monday</th>
+                    <th>Tuesday</th>
+                    <th>Wednesday</th>
+                    <th>Thursday</th>
+                    <th>Friday</th>
+                    <th>Saturday</th>
+                    <th>Sunday</th>
+                </tr>
+
+                <tbody>
+                    {employeeData.map((employee) => (
+                        <tr key={employee.id}>
+                            <td scope={getEmployeeFullName(employee)}>{getEmployeeFullName(employee)}</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+
         </div>
     );
 }

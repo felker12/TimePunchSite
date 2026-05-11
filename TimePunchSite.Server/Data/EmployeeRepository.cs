@@ -120,4 +120,69 @@ public class EmployeeRepository(DatabaseService database, PasswordService passwo
 
         return punches;
     }
+
+    /// <summary>
+    /// Gets a dictionary of employee time punches for a given work week based on the input day.
+    /// </summary>
+    /// <param name="day">The day for which to base the .</param>
+    /// <returns>A dictionary mapping employee IDs to their time punches.</returns>
+    public Dictionary<int, EmployeeView> GetEmployeeTimePunchesDictionaryForWeek(DateTime day)
+    {
+        DateTime monday = DateHelper.GetDateOfMonday(day);
+        DateTime nextMonday = DateHelper.GetDateOfNextMonday(monday.AddDays(1));
+
+        using var connection = _database.CreateConnection();
+        const string queryString = @"
+                SELECT t.ClockIn, t.ClockOut, t.BreakStart, t.BreakEnd, e.FirstName, e.LastName, t.EmployeeID, e.RoleID
+                FROM dbo.TimePunches t JOIN dbo.Employees e
+                ON t.EmployeeID = e.ID
+                WHERE t.ClockIn >= @monday AND t.ClockIn < @nextMonday
+                Order by t.EmployeeID desc";
+
+        using SqlCommand command = new(queryString, connection);
+        command.Parameters.Add("@monday", SqlDbType.DateTime2).Value = monday;
+        command.Parameters.Add("@nextMonday", SqlDbType.DateTime2).Value = nextMonday;
+
+        connection.Open();
+
+        using var reader = command.ExecuteReader();
+
+        var employeeMap = new Dictionary<int, EmployeeView>();
+
+        while (reader.Read())
+        {
+            // Process each row
+            int employeeId = reader.GetInt32(reader.GetOrdinal("EmployeeID"));
+
+            if (!employeeMap.TryGetValue(employeeId, out EmployeeView? employee))
+            {
+                employee = new EmployeeView
+                {
+                    ID = employeeId,
+                    FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                    LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                    Role = (EmployeeRole)reader.GetInt32(reader.GetOrdinal("RoleID")),
+                    TimePunches = []
+                };
+
+                employeeMap.Add(employeeId, employee);
+            }
+
+            employee.TimePunches.Add(new TimePunchData
+            {
+                EmployeeID = employeeId,
+                ClockIn = reader.GetDateTime(reader.GetOrdinal("ClockIn")),
+                ClockOut = reader.IsDBNull(reader.GetOrdinal("ClockOut")) ? null : reader.GetDateTime(reader.GetOrdinal("ClockOut")),
+                BreakStart = reader.IsDBNull(reader.GetOrdinal("BreakStart")) ? null : reader.GetDateTime(reader.GetOrdinal("BreakStart")),
+                BreakEnd = reader.IsDBNull(reader.GetOrdinal("BreakEnd")) ? null : reader.GetDateTime(reader.GetOrdinal("BreakEnd"))
+            });
+        }
+
+        return employeeMap;
+    }
+
+    public List<EmployeeView> GetEmployeeTimePunchesListForWeek(DateTime day)
+    {
+        return [.. GetEmployeeTimePunchesDictionaryForWeek(day).Values];
+    }
 }

@@ -6,6 +6,14 @@ export interface TimePunch {
     breakEnd: string | null;
 }
 
+export interface EmployeeView {
+    id: number;
+    firstName: string;
+    lastName: string;
+    role: EmployeeRole;
+    timePunches: TimePunch[];
+}
+
 export type ShiftStatus = "Working" | "On Break" | "Clocked Out";
 
 export type EmployeeRole = "Employee" | "Manager" | "Admin";
@@ -16,7 +24,6 @@ export const formatTime = (dateStr: string | null) => {
 
     //If it's a string from the DB, append 'Z' to force it to be treated as UTC
     const date = new Date(ensureUTC(dateStr));
-
     return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
@@ -27,6 +34,36 @@ export const ensureUTC = (dateStr: string): string => {
 export const formatDate = (dateStr: string) => {
     return new Date(ensureUTC(dateStr)).toLocaleDateString();
 };
+
+export const dayOfWeek = (dateInput: string | Date) => {
+    const date = typeof dateInput === 'string' ? new Date(ensureUTC(dateInput)) : dateInput;
+    return date.toLocaleDateString([], { weekday: 'long' });
+};
+
+export const workWeek = (date: Date): Date[] => {
+    const dates: Date[] = [];
+
+    const monday = getDateOfMonday(date);
+
+    for (let i = 0; i < 7; i++) {
+        const currentDate = new Date(monday);
+        currentDate.setDate(currentDate.getDate() + i);
+        dates.push(currentDate);
+    }
+
+    return dates;
+}
+
+export const getDateOfMonday = (date: Date): Date => {
+    const day = date.getDay(); //0 (Sun) to 6 (Sat)
+    const daysSinceMonday = (day + 6) % 7; //Calculate how many days have passed since Monday
+    const lastMonday = new Date(date);
+    lastMonday.setDate(lastMonday.getDate() - daysSinceMonday);
+    lastMonday.setHours(0, 0, 0, 0); //Set to start of the day for consistency
+
+    return lastMonday;
+};
+
 
 //Determine the current status of a shift based on the time punch data.
 //If the employee has clocked in but not clocked out, check if they are currently on a break or working.
@@ -45,3 +82,7 @@ export const getBreakCompleted = (punch: TimePunch): boolean => {
     
     return false;
 }
+
+export const getEmployeeFullName = (employee: EmployeeView) => {
+    return `${employee.firstName} ${employee.lastName}`;
+};

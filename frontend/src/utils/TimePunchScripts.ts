@@ -35,12 +35,23 @@ export const formatDate = (dateStr: string) => {
     return new Date(ensureUTC(dateStr)).toLocaleDateString();
 };
 
+export const formatDateShort = (dateStr: string) => {
+    return new Date(ensureUTC(dateStr)).toLocaleDateString([], {
+        month: 'numeric',
+        day: 'numeric'
+    });
+};
+
+export const formatDateToDayOfWeek = (date: Date): string => {
+    return dayOfWeek(date) + ", " + formatDateShort(date.toISOString());
+}
+
 export const dayOfWeek = (dateInput: string | Date) => {
     const date = typeof dateInput === 'string' ? new Date(ensureUTC(dateInput)) : dateInput;
     return date.toLocaleDateString([], { weekday: 'long' });
 };
 
-export const workWeek = (date: Date): Date[] => {
+export const getWorkWeek = (date: Date): Date[] => {
     const dates: Date[] = [];
 
     const monday = getDateOfMonday(date);

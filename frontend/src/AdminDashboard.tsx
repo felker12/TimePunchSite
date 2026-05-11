@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { type EmployeeRole, type EmployeeView, formatDate, formatTime, getShiftStatus, dayOfWeek, getEmployeeFullName } from './utils/TimePunchScripts';
+import { type EmployeeRole, type EmployeeView, formatDate, formatTime, getShiftStatus, dayOfWeek, getEmployeeFullName, getWorkWeek, formatDateToDayOfWeek} from './utils/TimePunchScripts';
 import { apiService } from '../src/utils/apiService';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,6 +8,8 @@ function AdminDashboard() {
     const [verifiedRole, setVerifiedRole] = useState<EmployeeRole | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [employeeData, setEmployeeData] = useState<EmployeeView[]>([]);
+    const [date, setDate] = useState(new Date());
+    const [weekDates, setWeekDates] = useState<Date[]>([]);
 
     //Navigation logic
     const navigate = useNavigate();
@@ -16,11 +18,15 @@ function AdminDashboard() {
     }
 
     const loadDash = async () => {
+        //TODO: for testing purposes, we can set the date to a specific value to ensure we have consistent data to work with. In production, this would likely be set to the current date.
+        setDate(new Date("2026-05-07")); //Set the date to today, this will trigger a reload of the punches for the current week
+        setWeekDates(getWorkWeek(date)); //Calculate the dates for the current week to display in the table header
+
         try {
             const [id, role, employees] = await Promise.all([
                 apiService.getVerifiedUserID(),
                 apiService.getUserRole(),
-                apiService.getTimePunchesForWeek(new Date("2026-05-07")) //Get punches for the current week, the backend will handle determining the actual date range
+                apiService.getTimePunchesForWeek(date) //Get punches for the current week, the backend will handle determining the actual date range
             ]);
 
             //If the user not an admin or manager, we don't want them to access the admin dashboard, 
@@ -55,13 +61,9 @@ function AdminDashboard() {
             <table className="time-table">
                 <tr>
                     <th scope="employeeName"></th>
-                    <th>Monday</th>
-                    <th>Tuesday</th>
-                    <th>Wednesday</th>
-                    <th>Thursday</th>
-                    <th>Friday</th>
-                    <th>Saturday</th>
-                    <th>Sunday</th>
+                    {weekDates.map((d, i) => (
+                        <th key={i}>{formatDateToDayOfWeek(d)}</th>
+                    ))}
                 </tr>
 
                 <tbody>

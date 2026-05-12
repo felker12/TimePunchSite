@@ -886,3 +886,26 @@ select:disabled {
     cursor: not-allowed;
     opacity: 0.6;
 }
+
+/* Ensure the table takes up the full width of the card */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse; /* Removes double borders */
+    margin-top: 10px;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden; /* Helps with rounded corners */
+}
+
+/* Add padding to the data cells */
+.admin-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+    color: #555;
+}
+
+/* Add a hover effect so the user can track the cell easily */
+.admin-table td:hover {
+    background-color: #f1f4f8;
+}

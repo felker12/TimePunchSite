@@ -1,21 +1,74 @@
 import { useEffect, useState } from 'react';
-import { type EmployeeRole, type EmployeeView, type TimePunch, formatTime, getEmployeeFullName, getWorkWeek, formatDateToDayOfWeek, ensureUTC} from './utils/TimePunchScripts';
+import { type EmployeeRole, type EmployeeView, type TimePunch, formatTime, getEmployeeFullName, getWorkWeek, formatDateToDayOfWeek, ensureUTC, getEmployeeFullNameShort} from './utils/TimePunchScripts';
 import { apiService } from '../src/utils/apiService';
 import { useNavigate } from 'react-router-dom';
 
 function AdminDashboard() {
-    const [verifiedId, setVerifiedId] = useState<number | null>(null);
-    const [verifiedRole, setVerifiedRole] = useState<EmployeeRole | null>(null);
+    //const [verifiedId, setVerifiedId] = useState<number | null>(null);
+    //const [verifiedRole, setVerifiedRole] = useState<EmployeeRole | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [employeeData, setEmployeeData] = useState<EmployeeView[]>([]);
     const [date, setDate] = useState(new Date());
     const [weekDates, setWeekDates] = useState<Date[]>([]);
+    const [selectedTP, setSelectedTP] = useState<TimePunch | null>(null);
+    const [selectedEmployee, setSelectedEmployee] = useState<EmployeeView | null>(null);
 
     //Navigation logic
     const navigate = useNavigate();
     const handleNavigation = () => {
         navigate('/employee-dashboard'); //Navigate to the employee log in page
     }
+
+    const handleTPClick = (employee: EmployeeView, timePunch: TimePunch | null) => {
+        setSelectedTP(timePunch);
+        setSelectedEmployee(employee);
+    }
+
+    const displayPunches = (employee: EmployeeView, date: Date) => {
+        const punches = employee.timePunches.filter(punch => dateMatches(punch.clockIn, date));
+
+        if (punches.length === 0)
+            return (
+                <div className="punch-container empty-cell"
+                    style={{
+                        cursor: 'pointer', minHeight: '40px', // Ensures there is a vertical target even if row is short
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', transition: 'background 0.2s' }}>
+                    <span className="text-muted" style={{ opacity: 0.4 }}>—</span>
+                </div>);
+
+        return (
+            <div className="punch-container" style={{
+                display: 'flex',
+                flexDirection: 'column',
+                fontSize: '0.75rem',
+                lineHeight: '1.2',
+                gap: '4px'
+            }}>
+                {punches.map((p, i) => (
+                    <div key={i} className="punch-row"
+                        style={{ cursor: 'pointer', padding: '2px', borderRadius: '4px', transition: 'background 0.2s' }}
+                        onClick={(e) => {
+                            e.stopPropagation(); // Prevents the TD's onClick from firing
+                            handleTPClick(employee, p);
+                        }}>
+                        <strong>{formatTime(p.clockIn)}</strong> - {p.clockOut ? formatTime(p.clockOut) : <span style={{ color: 'red' }}>LIVE</span>}
+                        {p.breakStart && (
+                            <div style={{ color: '#666', fontSize: '0.7rem' }}>
+                                Break: {formatTime(p.breakStart)}-{p.breakEnd ? formatTime(p.breakEnd) : '...'}
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
+    const dateMatches = (date1: string, date2: Date) => {
+        const d1 = new Date(ensureUTC(date1));
+
+        return d1.toLocaleDateString() === date2.toLocaleDateString();
+    };
+
 
     const loadDash = async () => {
         //TODO: for testing purposes, we can set the date to a specific value to ensure we have consistent data to work with. In production, this would likely be set to the current date.
@@ -39,8 +92,8 @@ function AdminDashboard() {
                 return;
             }
 
-            setVerifiedId(id);
-            setVerifiedRole(role);
+            //setVerifiedId(id);
+            //setVerifiedRole(role);
             setEmployeeData(employees);
         } catch (error) {
             console.error("Error loading dashboard data:", error);
@@ -57,99 +110,45 @@ function AdminDashboard() {
     if (isLoading || weekDates.length == 0) return <p>Loading Data...</p>;
 
     return (
-        <div className="card">
-            <p>Hello user number: {verifiedId}, verified role: {verifiedRole}!</p>
-            <h3>Employee Data</h3>
+        <div className="admin-dashboard-layout"
+            style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start', width: '100%' }}>
+            <div className="card" style={{ flex: 3 }}>
+                <h3>Employee Data</h3>
 
-            <table className="admin-table">
-                <thead>
-                    <tr>
-                        <th scope="employeeName"></th>
-                        {weekDates.map((d, i) => (
-                            <th key={i}>{formatDateToDayOfWeek(d)}</th>
-                        ))}
-                    </tr>
-                </thead>
-
-                <tbody>
-                    {employeeData.map((employee) => (
-                        <tr key={employee.id}>
-                            <td scope={getEmployeeFullName(employee)}><strong>{getEmployeeFullName(employee)}</strong></td>
+                <table className="admin-table">
+                    <thead>
+                        <tr>
+                            <th></th>
                             {weekDates.map((d, i) => (
-                                <td key={i}>
-                                    {displayPunches(employee, d)}
-                                </td>
+                                <th key={i}>{formatDateToDayOfWeek(d)}</th>
                             ))}
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
 
-        </div>
-    );
-}
+                    <tbody>
+                        {employeeData.map((employee) => (
+                            <tr key={employee.id}>
+                                <td><strong>{getEmployeeFullNameShort(employee)}</strong></td>
+                                {weekDates.map((d, i) => (
+                                    <td key={i} onClick={() => handleTPClick(employee, null)}>
+                                        {displayPunches(employee, d)}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
 
-const renderPunches = (employee: EmployeeView, targetDate: Date) => {
-    const punches = employee.timePunches.filter(p => dateMatches(p.clockIn, targetDate));
-
-    if (punches.length === 0) return <span className="text-muted">Off</span>;
-
-    return (
-        <div className="punch-cell">
-            {punches.map((p, i) => (
-                <div key={i} className="punch-entry">
-                    {formatTimePunchToString(p)}
+            {selectedEmployee !== null && (
+                <div className="card"
+                    style={{ flex: 1, position: 'sticky', top: '20px', minWidth: '300px' }}>
+                    <span>{ getEmployeeFullName(selectedEmployee)}</span>
                 </div>
-            ))}
+            )}
+
         </div>
     );
-};
-
-const displayPunches = (employee: EmployeeView, date: Date) => {
-    const punches = employee.timePunches.filter(punch => dateMatches(punch.clockIn, date));
-
-    if (punches.length === 0) {
-        return <span className="text-muted">Off</span>;
-    }
-
-    return (
-        <>
-            {punches.map((p, i) => (
-                <span key={i} className="punch-entry">
-                    {formatTimePunchToString(p)}
-                </span>
-            ))}
-        </>
-    );
-}
-
-const dateMatches = (date1: string, date2: Date) => {
-    const d1 = new Date(ensureUTC(date1));
-
-    return d1.toLocaleDateString() === date2.toLocaleDateString();
-};
-
-const formatTimePunchToString = (punch: TimePunch): string => {
-    //const clockInString = formatTime(punch.clockIn);
-    //const breakString = punch.breakStart ? (formatTime(punch.breakStart) + "-") : "" + (punch.breakEnd ? formatTime(punch.breakEnd) : "In Progress");
-    //const clockOutString: string = punch.clockOut ? formatTime(punch.clockOut) : "not clocked out";
-
-    //return clockInString + " " + breakString + " " + clockOutString;
-
-
-    const clockIn = formatTime(punch.clockIn);
-    const clockOut = punch.clockOut ? formatTime(punch.clockOut) : "??";
-
-    // Only show break info if a break actually happened
-    let breakInfo = "";
-    if (punch.breakStart) {
-        const bStart = formatTime(punch.breakStart);
-        const bEnd = punch.breakEnd ? formatTime(punch.breakEnd) : "...";
-        breakInfo = ` (b: ${bStart}-${bEnd})`;
-    }
-
-    return `${clockIn} - ${clockOut}${breakInfo}`;
-
 }
 
 export default AdminDashboard;

@@ -97,3 +97,7 @@ export const getBreakCompleted = (punch: TimePunch): boolean => {
 export const getEmployeeFullName = (employee: EmployeeView) => {
     return `${employee.firstName} ${employee.lastName}`;
 };
+
+export const getEmployeeFullNameShort = (employee: EmployeeView) => {
+    return `${employee.firstName[0]}. ${employee.lastName}`;
+};

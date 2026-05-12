@@ -889,23 +889,43 @@ select:disabled {
 
 /* Ensure the table takes up the full width of the card */
 .admin-table {
-    width: 100%;
     border-collapse: collapse; /* Removes double borders */
-    margin-top: 10px;
-    background-color: white;
-    border-radius: 8px;
+    background-color: transparent;
     overflow: hidden; /* Helps with rounded corners */
+    table-layout: fixed; /* Keeps columns even widths */
 }
 
 /* Add padding to the data cells */
 .admin-table td {
-    padding: 12px 15px;
+    padding: 0;
     border-bottom: 1px solid #eee;
     font-size: 14px;
     color: #555;
 }
 
+/* Ensure the wrapper inside the TD fills the height */
+.admin-table td > .punch-container {
+    height: 100%;
+    padding: 8px; /* Move the padding here instead of the TD */
+}
+
 /* Add a hover effect so the user can track the cell easily */
 .admin-table td:hover {
     background-color: #f1f4f8;
+}
+
+.admin-table th {
+    padding: 4px;
+}
+
+.punch-container {
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Ensure the specific punch rows stand out when hovered */
+.punch-row:hover {
+    background-color: var(--accent-gradient-start) !important;
+    color: white;
 }

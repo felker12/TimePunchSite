@@ -137,8 +137,8 @@ const formatTimePunchToString = (punch: TimePunch): string => {
     //return clockInString + " " + breakString + " " + clockOutString;
 
 
-    const cin = formatTime(punch.clockIn);
-    const cout = punch.clockOut ? formatTime(punch.clockOut) : "??";
+    const clockIn = formatTime(punch.clockIn);
+    const clockOut = punch.clockOut ? formatTime(punch.clockOut) : "??";
 
     // Only show break info if a break actually happened
     let breakInfo = "";
@@ -148,7 +148,7 @@ const formatTimePunchToString = (punch: TimePunch): string => {
         breakInfo = ` (b: ${bStart}-${bEnd})`;
     }
 
-    return `${cin} - ${cout}${breakInfo}`;
+    return `${clockIn} - ${clockOut}${breakInfo}`;
 
 }
 

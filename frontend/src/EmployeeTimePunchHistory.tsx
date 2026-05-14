@@ -86,7 +86,6 @@ function EmployeeTimePunchHistory() {
                               </td>
                               <td>{formatTime(p.clockIn)}</td>
                               <td>
-                                  {/* p.breakStart ? `${formatTime(p.breakStart)} - ${formatTime(p.breakEnd)}` : "No Break" */}
                                   {p.breakStart ? (
                                       <>
                                           {formatTime(p.breakStart)} - {p.breakEnd ? formatTime(p.breakEnd) : "In Progress"}

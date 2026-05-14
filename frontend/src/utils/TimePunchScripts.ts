@@ -24,7 +24,7 @@ export const formatTime = (dateStr: string | null) => {
 
     //If it's a string from the DB, append 'Z' to force it to be treated as UTC
     const date = new Date(ensureUTC(dateStr));
-    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
 export const ensureUTC = (dateStr: string): string => {
@@ -75,6 +75,11 @@ export const getDateOfMonday = (date: Date): Date => {
     return lastMonday;
 };
 
+export const dateMatches = (date1: string, date2: Date) => {
+    const d1 = new Date(ensureUTC(date1));
+
+    return d1.toLocaleDateString() === date2.toLocaleDateString();
+};
 
 //Determine the current status of a shift based on the time punch data.
 //If the employee has clocked in but not clocked out, check if they are currently on a break or working.

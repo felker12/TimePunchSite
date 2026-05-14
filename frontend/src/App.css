@@ -929,3 +929,11 @@ select:disabled {
     background-color: var(--accent-gradient-start) !important;
     color: white;
 }
+
+.employee-card{
+    max-width: 150px;
+}
+
+.employee-card input {
+    max-width: 100px
+}

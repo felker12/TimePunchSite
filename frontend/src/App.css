@@ -931,9 +931,14 @@ select:disabled {
 }
 
 .employee-card{
-    max-width: 150px;
+    max-width: 250px;
 }
 
 .employee-card input {
-    max-width: 100px
+    max-width: 80px;
+    padding: 0px 4px;
+}
+
+.employee-card button {
+    margin: 8px 4px;
 }

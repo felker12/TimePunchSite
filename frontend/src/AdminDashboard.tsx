@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { type EmployeeRole, type EmployeeView, type TimePunch, formatTime, getEmployeeFullName, getWorkWeek, formatDateToDayOfWeek, getEmployeeFullNameShort, dateMatches} from './utils/TimePunchScripts';
+import { type EmployeeRole, type EmployeeView, type TimePunch, formatTime, getEmployeeFullName, getWorkWeek, formatDateToDayOfWeek, getEmployeeFullNameShort, dateMatches, formatDate} from './utils/TimePunchScripts';
 import { apiService } from '../src/utils/apiService';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,6 +12,7 @@ function AdminDashboard() {
     const [weekDates, setWeekDates] = useState<Date[]>([]);
     const [selectedTP, setSelectedTP] = useState<TimePunch | null>(null);
     const [selectedEmployee, setSelectedEmployee] = useState<EmployeeView | null>(null);
+    const [selectedDate, setSelectedDate] = useState(new Date());
 
     //Navigation logic
     const navigate = useNavigate();
@@ -19,9 +20,10 @@ function AdminDashboard() {
         navigate('/employee-dashboard'); //Navigate to the employee log in page
     }
 
-    const handleTPClick = (employee: EmployeeView, timePunch: TimePunch | null) => {
+    const handleTPClick = (employee: EmployeeView, timePunch: TimePunch | null, date: Date) => {
         setSelectedTP(timePunch);
         setSelectedEmployee(employee);
+        setSelectedDate(date);
     }
 
     const displayPunch = (employee: EmployeeView, date: Date) => {
@@ -49,7 +51,7 @@ function AdminDashboard() {
                         style={{ cursor: 'pointer', padding: '2px', borderRadius: '4px', transition: 'background 0.2s' }}
                         onClick={(e) => {
                             e.stopPropagation(); //Prevents the TD's onClick from firing
-                            handleTPClick(employee, p);
+                            handleTPClick(employee, p, date);
                         }}>
                         <strong>{formatTime(p.clockIn)}</strong> - {p.clockOut ? formatTime(p.clockOut) : <span style={{ color: 'red' }}>LIVE</span>}
                         {p.breakStart && (
@@ -123,7 +125,7 @@ function AdminDashboard() {
                             <tr key={employee.id}>
                                 <td><strong>{getEmployeeFullNameShort(employee)}</strong></td>
                                 {weekDates.map((d, i) => (
-                                    <td key={i} onClick={() => handleTPClick(employee, null)}>
+                                    <td key={i} onClick={() => handleTPClick(employee, null, d)}>
                                         {displayPunch(employee, d)}
                                     </td>
                                 ))}
@@ -133,66 +135,145 @@ function AdminDashboard() {
                 </table>
             </div>
 
-            {selectedEmployee !== null && (EmployeeDetailCard({ employee: selectedEmployee, timePunch: selectedTP! })
+            {selectedEmployee !== null && (<EmployeeDetailCard
+                employee={selectedEmployee}
+                timePunch={selectedTP}
+                date={selectedDate}
+            />
             )}
 
         </div>
     );
 }
 
-function EmployeeDetailCard({ employee, timePunch }: { employee: EmployeeView, timePunch: TimePunch }) {
-    //const [clockIn, setClockIn] = useState(String);
-    //const [breakStart, setBreakStart] = useState(String);  
-    //const [breakEnd, setBreakEnd] = useState(String);
-    //const [clockOut, setClockOut] = useState(String);
+function EmployeeDetailCard({ employee, timePunch, date }: { employee: EmployeeView, timePunch: TimePunch | null, date: Date }) {
+    const [clockIn, setClockIn] = useState("");
+    const [breakStart, setBreakStart] = useState("");
+    const [breakEnd, setBreakEnd] = useState("");
+    const [clockOut, setClockOut] = useState("");
+
+    const validateTPInput = (input: string, isRequired: boolean = false): boolean => {
+        if (input !== null) {
+            if (input === "") {
+                return isRequired; //ClockIn is usually required, others can be empty
+            }
+
+            // Regex for HH:mm (24-hour format)
+            const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+            return timeRegex.test(input);
+        }
+
+        return false;
+    }
+
+    const handleSaveClick = () => {
+        const checkClockIn = validateTPInput(clockIn, true);
+
+        //Clock In is mandatory for any punch
+        if (!checkClockIn) {
+            alert("Please enter a valid Clock In time (HH:mm)");
+            return;
+        }
+
+        //Validate the rest
+        const checkBreakStart = validateTPInput(breakStart);
+        const checkBreadkEnd = validateTPInput(breakEnd);
+        const checkClockOut = validateTPInput(clockOut);
+
+        // Validate the rest
+        if (!checkBreakStart || !checkBreadkEnd || !checkClockOut) {
+            alert("One or more times are invalid. Use HH:mm format.");
+            return;
+        }
+
+        const combineDateAndTime = (timeStr: string) => {
+            if (!timeStr)
+                return null;
+
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            const newDate = new Date(date); // Use the date passed from the dashboard
+            newDate.setHours(hours, minutes, 0, 0);
+
+            return newDate.toISOString();
+        };
+
+        const timePunch: TimePunch = {
+            employeeID: employee.id,
+            clockIn: combineDateAndTime(clockIn)!,
+            breakStart: combineDateAndTime(breakStart),
+            breakEnd: combineDateAndTime(breakEnd),
+            clockOut: combineDateAndTime(clockOut),
+        };
+
+        try {
+            if (timePunch) {
+                //TODO: Update logic 
+            } else {
+                //TODO: Create logic
+            }
+
+            alert("Success!");
+                //TODO: refresh the dashboard
+        } catch (err) {
+            console.error("Save failed", err);
+        }
+    }
+
+    useEffect(() => {
+        if (timePunch !== null) {
+            setClockIn(timePunch.clockIn ? formatTime(timePunch.clockIn): "");
+            setBreakStart(timePunch.breakStart ? formatTime(timePunch.breakStart) : "");
+            setBreakEnd(timePunch.breakEnd ? formatTime(timePunch.breakEnd) : "");
+            setClockOut(timePunch.clockOut ? formatTime(timePunch.clockOut) : "");
+        }
+        else {
+            setClockIn("");
+            setBreakStart("");
+            setBreakEnd("");
+            setClockOut("");
+        }
+    }, [timePunch]);
 
     return (
-        <div className="card" style={{ flex: 1, position: 'sticky', top: '20px', minWidth: '200px', maxWidth: '300'}}>
-            <h4>{getEmployeeFullName(employee)}</h4>
-            {timePunch !== null ?
-                <div className="employee-card">
+        <div className="card" style={{ flex: 1, position: 'sticky', top: '20px', minWidth: '180px', maxWidth: '250'}}>
+            <span><strong>{getEmployeeFullName(employee)}</strong></span>
+            <span>{formatDateToDayOfWeek(date)}</span>
+            {<div className="employee-card">
+                    <span>Clock In</span>
                     <div>
-                        <span>Clock In</span>
                         <input id="clockInTB"
-                            placeholder={formatTime(timePunch.clockIn)}
-                            //value={clockIn}
-                            //onChange={(e) => setClockIn(e.target.value)}
+                            value={clockIn}
+                            onChange={(e) => setClockIn(e.target.value)}
                         >
                         </input>
                     </div>
                     <span>Break Start - Break End</span>
                     <div>
                         <input id="breakStartTB"
-                            placeholder={formatTime(timePunch.breakStart)!}
-                            //value={breakStart}
-                            //onChange={(e) => setBreakStart(e.target.value)}
+                            value={breakStart}
+                            onChange={(e) => setBreakStart(e.target.value)}
                         >
                         </input>
+                        <span> - </span>
                         <input id="breakEndTB"
-                            placeholder={formatTime(timePunch.breakEnd)!}
-                            //value={breakEnd}
-                            //onChange={(e) => setBreakEnd(e.target.value)}
+                            value={breakEnd}
+                            onChange={(e) => setBreakEnd(e.target.value)}
                         >
                         </input>
                     </div>
+                    <span>Clock Out</span>
                     <div>
-                        <span>Clock Out</span>
                         <input id="clockOutTB"
-                            placeholder={formatTime(timePunch.clockOut)!}
-                            //value={clockOut}
-                            //onChange={(e) => setClockOut(e.target.value)}
+                            value={clockOut}
+                            onChange={(e) => setClockOut(e.target.value)}
                         >
                         </input>
                     </div>
                     
-                    <button id="updateTP">Save</button>
-                </div> :
-                <>
-                    <span>No time punch</span>
-                </>}
+                <button id="updateTP" onClick={() => handleSaveClick()}>{timePunch !== null ? "Save" : "Create" }</button>
+                </div>}
         </div>
     );
 }
-
 
 export default AdminDashboard;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { type EmployeeRole, type EmployeeView, type TimePunch, formatTime, getEmployeeFullName, getWorkWeek, formatDateToDayOfWeek, getEmployeeFullNameShort, dateMatches, formatDate} from './utils/TimePunchScripts';
+import { type EmployeeRole, type EmployeeView, type TimePunch, formatTime, getEmployeeFullName, getWorkWeek, formatDateToDayOfWeek, getEmployeeFullNameShort, dateMatches, LogTimePunch} from './utils/TimePunchScripts';
 import { apiService } from '../src/utils/apiService';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,11 +8,11 @@ function AdminDashboard() {
     const [verifiedRole, setVerifiedRole] = useState<EmployeeRole | null>(null);
     const [verifiedId, setVerifiedId] = useState<number | null>(null);
     const [employeeData, setEmployeeData] = useState<EmployeeView[]>([]);
-    const [date, setDate] = useState(new Date());
-    const [weekDates, setWeekDates] = useState<Date[]>([]);
+    const [date, setDate] = useState(new Date("2026-05-07"));
     const [selectedTP, setSelectedTP] = useState<TimePunch | null>(null);
     const [selectedEmployee, setSelectedEmployee] = useState<EmployeeView | null>(null);
-    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [weekDates, setWeekDates] = useState<Date[]>([]);
 
     //Navigation logic
     const navigate = useNavigate();
@@ -26,6 +26,29 @@ function AdminDashboard() {
         setSelectedDate(date);
     }
 
+    const handleClear = () => {
+        setSelectedEmployee(null);
+        setSelectedTP(null);
+    }
+
+    //Helper to format JavaScript Date objects into YYYY-MM-DD local strings for the date picker input
+    const toInputDateFormat = (d: Date): string => {
+        const offset = d.getTimezoneOffset();
+        const localDate = new Date(d.getTime() - (offset * 60 * 1000)); //Adjusts the date to local timezone to avoid off-by-one-day issues in the picker
+        return localDate.toISOString().split('T')[0];
+    };
+
+    // Handler when an admin picks a new date from the UI picker
+    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.value) return;
+        //Split the YYYY-MM-DD to instantiate a proper local date object instance 
+        const [year, month, day] = e.target.value.split('-').map(Number);
+        const newTargetDate = new Date(year, month - 1, day);
+
+        setDate(newTargetDate);
+        handleClear(); //Clear active editing cards to avoid mismatched context
+    };
+
     const displayPunch = (employee: EmployeeView, date: Date) => {
         const punches = employee.timePunches.filter(punch => dateMatches(punch.clockIn, date));
 
@@ -34,7 +57,10 @@ function AdminDashboard() {
                 <div className="punch-container empty-cell"
                     style={{
                         cursor: 'pointer', minHeight: '40px', //Ensures there is a vertical target even if row is short
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', transition: 'background 0.2s' }}>
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: '100%', transition: 'background 0.2s',
+                        pointerEvents: "none" //click passes straight through
+                    }}>
                     <span className="text-muted" style={{ opacity: 0.4 }}>—</span>
                 </div>);
 
@@ -44,13 +70,18 @@ function AdminDashboard() {
                 flexDirection: 'column',
                 fontSize: '0.75rem',
                 lineHeight: '1.2',
-                gap: '4px'
+                gap: '4px',
+                pointerEvents: 'none' //Container padding passes clicks through to td for adding new shifts
             }}>
                 {punches.map((p, i) => (
                     <div key={i} className="punch-row"
-                        style={{ cursor: 'pointer', padding: '2px', borderRadius: '4px', transition: 'background 0.2s' }}
+                        style={{
+                            cursor: 'pointer', padding: '2px',
+                            borderRadius: '4px', transition: 'background 0.2s',
+                            pointerEvents: 'auto' //Re-enables pointer tracking explicitly for this specific shift item
+                        }}
                         onClick={(e) => {
-                            e.stopPropagation(); //Prevents the TD's onClick from firing
+                            e.stopPropagation(); //Prevents the TD's onClick from creating a blank context
                             handleTPClick(employee, p, date);
                         }}>
                         <strong>{formatTime(p.clockIn)}</strong> - {p.clockOut ? formatTime(p.clockOut) : <span style={{ color: 'red' }}>LIVE</span>}
@@ -66,18 +97,14 @@ function AdminDashboard() {
     }
 
     const loadDash = async () => {
-        //TODO: for testing purposes, we can set the date to a specific value to ensure we have consistent data to work with. In production, this would likely be set to the current date.
-        const targetDate = new Date("2026-05-07"); // Use a local constant
-        setDate(targetDate); //Set the date for testing, this will trigger a reload of the punches for the current week
-
-        const currentWeek = getWorkWeek(targetDate);
+        const currentWeek = getWorkWeek(date);
         setWeekDates(currentWeek); //Calculate the dates for the current week to display in the table header
 
         try {
             const [id, role, employees] = await Promise.all([
                 apiService.getVerifiedUserID(),
                 apiService.getUserRole(),
-                apiService.getTimePunchesForWeek(targetDate) //Get punches for the current week, the backend will handle determining the actual date range
+                apiService.getTimePunchesForWeek(date) //Get punches for the current week, the backend will handle determining the actual date range
             ]);
 
             //If the user not an admin or manager, we don't want them to access the admin dashboard, 
@@ -100,7 +127,7 @@ function AdminDashboard() {
 
     useEffect(() => {
         loadDash();
-    }, [navigate]);
+    }, [date, navigate]);
 
     if (isLoading || weekDates.length == 0) return <p>Loading Data...</p>;
 
@@ -108,7 +135,20 @@ function AdminDashboard() {
         <div className="admin-dashboard-layout"
             style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start', width: '100%' }}>
             <div className="card" style={{ flex: 3 }}>
-                <h3>Employee Data</h3>
+                <div>
+                    <div style={{float: "right"}}>
+                        <label htmlFor="adminDatePicker" style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>
+                            Select Pay Period/Week View:
+                        </label>
+                        <input
+                            type="date"
+                            id="adminDatePicker"
+                            value={toInputDateFormat(date)}
+                            onChange={handleDateChange}
+                            style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid #ccc', fontFamily: 'inherit' }}
+                        />
+                    </div>
+                </div>
 
                 <table className="admin-table">
                     <thead>
@@ -135,10 +175,12 @@ function AdminDashboard() {
                 </table>
             </div>
 
-            {selectedEmployee !== null && (<EmployeeDetailCard
+            {selectedEmployee !== null && selectedDate !== null && (<EmployeeDetailCard
                 employee={selectedEmployee}
                 timePunch={selectedTP}
                 date={selectedDate}
+                onClose={handleClear}
+                onSaveSuccess={loadDash}
             />
             )}
 
@@ -146,42 +188,61 @@ function AdminDashboard() {
     );
 }
 
-function EmployeeDetailCard({ employee, timePunch, date }: { employee: EmployeeView, timePunch: TimePunch | null, date: Date }) {
+function EmployeeDetailCard({ employee, timePunch, date, onClose, onSaveSuccess }:
+    { employee: EmployeeView, timePunch: TimePunch | null, date: Date, onClose: () => void, onSaveSuccess: () => void }) {
     const [clockIn, setClockIn] = useState("");
     const [breakStart, setBreakStart] = useState("");
     const [breakEnd, setBreakEnd] = useState("");
     const [clockOut, setClockOut] = useState("");
 
     const validateTPInput = (input: string, isRequired: boolean = false): boolean => {
-        if (input !== null) {
-            if (input === "") {
-                return isRequired; //ClockIn is usually required, others can be empty
-            }
-
-            // Regex for HH:mm (24-hour format)
-            const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
-            return timeRegex.test(input);
+        if (input === null || input === undefined || input === "") {
+            return !isRequired;
         }
 
-        return false;
+        // Regex for HH:mm (24-hour format)
+        const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+        return timeRegex.test(input);
     }
 
-    const handleSaveClick = () => {
-        const checkClockIn = validateTPInput(clockIn, true);
+    const handleTimeInputChange = (
+        e: React.ChangeEvent<HTMLInputElement>,
+        currentValue: string,
+        setterFunc: (v: string) => void
+    ) => {
+        const rawValue = e.target.value;
+        //Native event tracking to see if the user performed a deletion/backspace
+        const isDeletion = (e.nativeEvent as InputEvent).inputType === 'deleteContentBackward';
 
+        //If backspace was pressed and the character being removed was the colon, 
+        //drop the second digit too (e.g., changing "12:" -> "1")
+        if (isDeletion && currentValue.includes(':') && !rawValue.includes(':')) {
+            //Find where the colon used to be and drop it along with the digit right before it
+            const colonIndex = currentValue.indexOf(':');
+            const updatedVal = currentValue.slice(0, colonIndex - 1) + currentValue.slice(colonIndex + 1);
+            setterFunc(updatedVal);
+            return;
+        }
+
+        let filteredVal = rawValue.replace(/[^0-9:]/g, '');
+
+        //Auto-insert colon cleanly when going forward
+        if (filteredVal.length === 2 && !filteredVal.includes(':') && !isDeletion) {
+            filteredVal += ':';
+        }
+
+        setterFunc(filteredVal);
+    };
+
+    const handleSaveClick = () => {
         //Clock In is mandatory for any punch
-        if (!checkClockIn) {
+        if (!validateTPInput(clockIn, true)) {
             alert("Please enter a valid Clock In time (HH:mm)");
             return;
         }
 
-        //Validate the rest
-        const checkBreakStart = validateTPInput(breakStart);
-        const checkBreadkEnd = validateTPInput(breakEnd);
-        const checkClockOut = validateTPInput(clockOut);
-
         // Validate the rest
-        if (!checkBreakStart || !checkBreadkEnd || !checkClockOut) {
+        if (!validateTPInput(breakStart) || !validateTPInput(breakEnd) || !validateTPInput(clockOut)) {
             alert("One or more times are invalid. Use HH:mm format.");
             return;
         }
@@ -191,13 +252,13 @@ function EmployeeDetailCard({ employee, timePunch, date }: { employee: EmployeeV
                 return null;
 
             const [hours, minutes] = timeStr.split(':').map(Number);
-            const newDate = new Date(date); // Use the date passed from the dashboard
+            const newDate = new Date(date); //date passed from the dashboard
             newDate.setHours(hours, minutes, 0, 0);
 
             return newDate.toISOString();
         };
 
-        const timePunch: TimePunch = {
+        const timePunchPayload: TimePunch = {
             employeeID: employee.id,
             clockIn: combineDateAndTime(clockIn)!,
             breakStart: combineDateAndTime(breakStart),
@@ -206,14 +267,16 @@ function EmployeeDetailCard({ employee, timePunch, date }: { employee: EmployeeV
         };
 
         try {
-            if (timePunch) {
-                //TODO: Update logic 
+            if (timePunch !== null) {
+                //TODO: Update logic
+                LogTimePunch(timePunchPayload);
             } else {
                 //TODO: Create logic
+                LogTimePunch(timePunchPayload);
             }
 
             alert("Success!");
-                //TODO: refresh the dashboard
+            onSaveSuccess(); //reload the dash
         } catch (err) {
             console.error("Save failed", err);
         }
@@ -221,7 +284,7 @@ function EmployeeDetailCard({ employee, timePunch, date }: { employee: EmployeeV
 
     useEffect(() => {
         if (timePunch !== null) {
-            setClockIn(timePunch.clockIn ? formatTime(timePunch.clockIn): "");
+            setClockIn(timePunch.clockIn ? formatTime(timePunch.clockIn) : "");
             setBreakStart(timePunch.breakStart ? formatTime(timePunch.breakStart) : "");
             setBreakEnd(timePunch.breakEnd ? formatTime(timePunch.breakEnd) : "");
             setClockOut(timePunch.clockOut ? formatTime(timePunch.clockOut) : "");
@@ -235,43 +298,57 @@ function EmployeeDetailCard({ employee, timePunch, date }: { employee: EmployeeV
     }, [timePunch]);
 
     return (
-        <div className="card" style={{ flex: 1, position: 'sticky', top: '20px', minWidth: '180px', maxWidth: '250'}}>
-            <span><strong>{getEmployeeFullName(employee)}</strong></span>
-            <span>{formatDateToDayOfWeek(date)}</span>
+        <div className="card" style={{ flex: 1, position: 'sticky', top: '20px', minWidth: '180px', maxWidth: '250' }}>
+            <div>
+                <span><strong>{getEmployeeFullName(employee)}</strong></span>
+                <button id="clearBtn"
+                    style={{ width: "30px", float: "right", cursor: "pointer" }}
+                    onClick={onClose}
+                >
+                    X</button>
+            </div>
+            <div style={{ color: '#555', fontSize: '1rem' }}>{formatDateToDayOfWeek(date)}</div>
             {<div className="employee-card">
-                    <span>Clock In</span>
-                    <div>
-                        <input id="clockInTB"
-                            value={clockIn}
-                            onChange={(e) => setClockIn(e.target.value)}
-                        >
-                        </input>
-                    </div>
-                    <span>Break Start - Break End</span>
-                    <div>
-                        <input id="breakStartTB"
-                            value={breakStart}
-                            onChange={(e) => setBreakStart(e.target.value)}
-                        >
-                        </input>
-                        <span> - </span>
-                        <input id="breakEndTB"
-                            value={breakEnd}
-                            onChange={(e) => setBreakEnd(e.target.value)}
-                        >
-                        </input>
-                    </div>
-                    <span>Clock Out</span>
-                    <div>
-                        <input id="clockOutTB"
-                            value={clockOut}
-                            onChange={(e) => setClockOut(e.target.value)}
-                        >
-                        </input>
-                    </div>
-                    
-                <button id="updateTP" onClick={() => handleSaveClick()}>{timePunch !== null ? "Save" : "Create" }</button>
-                </div>}
+                <label htmlFor="clockInTB" style={{ display: 'block', fontSize: '1rem', fontWeight: 'bold' }}>Clock In</label>
+                <div>
+                    <input id="clockInTB"
+                        type="text"
+                        value={clockIn}
+                        maxLength={5}
+                        onChange={(e) => handleTimeInputChange(e, clockIn, setClockIn)}
+                    >
+                    </input>
+                </div>
+                <label style={{ display: 'block', fontSize: '1rem', fontWeight: 'bold' }}>Break Start - Break End</label>
+                <div>
+                    <input id="breakStartTB"
+                        value={breakStart}
+                        maxLength={5}
+                        onChange={(e) => handleTimeInputChange(e, breakStart, setBreakStart)}
+                    >
+                    </input>
+                    <span> - </span>
+                    <input id="breakEndTB"
+                        value={breakEnd}
+                        maxLength={5}
+                        onChange={(e) => handleTimeInputChange(e, breakEnd, setBreakEnd)}
+                    >
+                    </input>
+                </div>
+                <label htmlFor="clockOutTB" style={{ display: 'block', fontSize: '1rem', fontWeight: 'bold' }}>Clock Out</label>
+                <div>
+                    <input id="clockOutTB"
+                        value={clockOut}
+                        maxLength={5}
+                        onChange={(e) => handleTimeInputChange(e, clockOut, setClockOut)}
+                    >
+                    </input>
+                </div>
+
+                <button id="updateTP"
+                    onClick={() => handleSaveClick()}>{timePunch !== null ? "Save" : "Create"}
+                </button>
+            </div>}
         </div>
     );
 }

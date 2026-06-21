@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using System.Data;
+using System.Diagnostics;
 using TimePunchSite.Server.Security;
 
 namespace TimePunchSite.Server.Data;
@@ -90,13 +91,47 @@ public class EmployeeRepository(DatabaseService database, PasswordService passwo
         return rowsAffected > 0;
     }
 
+    public bool UpdateTimePunch(int timePunchID, DateTime clockIn, DateTime? clockOut, DateTime? breakStart, DateTime? breakEnd)
+    {
+        using var connection = _database.CreateConnection();
+
+        const string query = @"
+            UPDATE dbo.TimePunches
+            SET ClockIn = @clockIn,
+                ClockOut = @clockOut,
+                BreakStart = @breakStart,
+                BreakEnd = @breakEnd
+            WHERE TimePunchID = @timePunchID";
+
+        using var command = new SqlCommand(query, connection);
+
+        command.Parameters.Add("@timePunchID", SqlDbType.Int).Value = timePunchID;
+        command.Parameters.Add("@clockIn", SqlDbType.DateTime2).Value = clockIn;
+        command.Parameters.Add("@clockOut", SqlDbType.DateTime2).Value = (object?)clockOut ?? DBNull.Value;
+        command.Parameters.Add("@breakStart", SqlDbType.DateTime2).Value = (object?)breakStart ?? DBNull.Value;
+        command.Parameters.Add("@breakEnd", SqlDbType.DateTime2).Value = (object?)breakEnd ?? DBNull.Value;
+
+        connection.Open();
+
+        int rowsAffected = command.ExecuteNonQuery();
+
+        Debug.WriteLine($"Rows affected: {rowsAffected}"); //TODO
+
+        return rowsAffected > 0;
+    }
+
+    public bool UpdateTimePunch(TimePunchData punchData)
+    {
+        return UpdateTimePunch(punchData.EmployeeID, punchData.ClockIn, punchData.ClockOut, punchData.BreakStart, punchData.BreakEnd);
+    }
+
     public List<TimePunchData> GetTimePunchDataList(int id, int limit = 2000)
     {
         List<TimePunchData> punches = [];
 
         using var connection = _database.CreateConnection();
         const string query = @"
-            SELECT TOP (@limit) EmployeeID, ClockIn, ClockOut, BreakStart, BreakEnd
+            SELECT TOP (@limit) EmployeeID, ClockIn, ClockOut, BreakStart, BreakEnd, TimePunchID
             FROM dbo.TimePunches
             WHERE EmployeeID = @id
             ORDER BY ClockIn DESC";
@@ -114,7 +149,8 @@ public class EmployeeRepository(DatabaseService database, PasswordService passwo
                 reader.GetDateTime(1),
                 reader.IsDBNull(2) ? null : reader.GetDateTime(2),
                 reader.IsDBNull(3) ? null : reader.GetDateTime(3),
-                reader.IsDBNull(4) ? null : reader.GetDateTime(4)
+                reader.IsDBNull(4) ? null : reader.GetDateTime(4),
+                reader.IsDBNull(5) ? null : reader.GetInt32(5)
             ));
         }
 
@@ -133,7 +169,7 @@ public class EmployeeRepository(DatabaseService database, PasswordService passwo
 
         using var connection = _database.CreateConnection();
         const string queryString = @"
-                SELECT t.ClockIn, t.ClockOut, t.BreakStart, t.BreakEnd, e.FirstName, e.LastName, t.EmployeeID, e.RoleID
+                SELECT t.ClockIn, t.ClockOut, t.BreakStart, t.BreakEnd, e.FirstName, e.LastName, t.EmployeeID, e.RoleID, t.TimePunchID
                 FROM dbo.TimePunches t JOIN dbo.Employees e
                 ON t.EmployeeID = e.ID
                 WHERE t.ClockIn >= @monday AND t.ClockIn < @nextMonday
@@ -174,7 +210,8 @@ public class EmployeeRepository(DatabaseService database, PasswordService passwo
                 ClockIn = reader.GetDateTime(reader.GetOrdinal("ClockIn")),
                 ClockOut = reader.IsDBNull(reader.GetOrdinal("ClockOut")) ? null : reader.GetDateTime(reader.GetOrdinal("ClockOut")),
                 BreakStart = reader.IsDBNull(reader.GetOrdinal("BreakStart")) ? null : reader.GetDateTime(reader.GetOrdinal("BreakStart")),
-                BreakEnd = reader.IsDBNull(reader.GetOrdinal("BreakEnd")) ? null : reader.GetDateTime(reader.GetOrdinal("BreakEnd"))
+                BreakEnd = reader.IsDBNull(reader.GetOrdinal("BreakEnd")) ? null : reader.GetDateTime(reader.GetOrdinal("BreakEnd")),
+                TimePunchID = reader.IsDBNull(reader.GetOrdinal("TimePunchID")) ? null : reader.GetInt32(reader.GetOrdinal("TimePunchID"))
             });
         }
 

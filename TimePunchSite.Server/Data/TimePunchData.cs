@@ -14,21 +14,23 @@
         public DateTime? ClockOut { get; set; }
         public DateTime? BreakStart { get; set; }
         public DateTime? BreakEnd { get; set; }
+        public int? TimePunchID { get; set; }
 
-        public TimePunchData(int employeeId, DateTime clockIn, DateTime? clockOut, DateTime? breakStart, DateTime? breakEnd)
+        public TimePunchData(int employeeId, DateTime clockIn, DateTime? clockOut, DateTime? breakStart, DateTime? breakEnd, int? timePunchID)
             {
                 EmployeeID = employeeId;
                 ClockIn = clockIn;
                 ClockOut = clockOut;
                 BreakStart = breakStart;
                 BreakEnd = breakEnd;
+                TimePunchID = timePunchID;
         }
 
         public TimePunchData() { }
 
         public override readonly string ToString()
         {
-            return $"EmployeeID: {EmployeeID}, ClockIn: {ClockIn}, ClockOut: {ClockOut}, BreakStart: {BreakStart}, BreakEnd: {BreakEnd}";
+            return $"EmployeeID: {EmployeeID}, ClockIn: {ClockIn}, ClockOut: {ClockOut}, BreakStart: {BreakStart}, BreakEnd: {BreakEnd}, TimePunchID: {TimePunchID}";
         }
 
         public readonly ShiftStatus GetShiftStatus()

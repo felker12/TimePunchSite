@@ -4,6 +4,7 @@ export interface TimePunch {
     clockOut: string | null;
     breakStart: string | null;
     breakEnd: string | null;
+    timePunchID: number | null;
 }
 
 export interface EmployeeView {
@@ -105,12 +106,4 @@ export const getEmployeeFullName = (employee: EmployeeView) => {
 
 export const getEmployeeFullNameShort = (employee: EmployeeView) => {
     return `${employee.firstName[0]}. ${employee.lastName}`;
-};
-
-export const LogTimePunch = (timePunch: TimePunch) => {
-    console.log("employee id: " + timePunch.employeeID);
-    console.log("clock in:    " + timePunch.clockIn);
-    console.log("break start: " + timePunch.breakStart);
-    console.log("break end:   " + timePunch.breakEnd);
-    console.log("clock out:   " + timePunch.clockOut);
 };

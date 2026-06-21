@@ -73,5 +73,15 @@ export const apiService = {
         }
 
         return { success: result.success, role: result.role as EmployeeRole};
+    },
+
+    //Admin function to update a time punch //TODO
+    async updatePunch(punch: TimePunch): Promise<void> {
+        const response = await fetch('/api/update-timepunch', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ punch })
+        });
+        if (!response.ok) throw new Error("Failed to update punch");
     }
 }

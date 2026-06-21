@@ -122,10 +122,6 @@ api.MapPost("get-user-role", [Authorize] (ClaimsPrincipal user) =>
 api.MapPost("perform-punch", [Authorize] (TimePunchAction action, ClaimsPrincipal user, EmployeeRepository repo) =>
 {
     int id = getUserIdFromClaims(user);
-    // Implementation for performing an action
-    Debug.WriteLine($"Performing punch action for user {id}");
-    Debug.WriteLine($"Action Type: {action.ActionType}");
-
     bool success = repo.PerformPunchAction(id, action.ActionType);
 
     if (!success)
@@ -139,6 +135,15 @@ api.MapPost("get-timepunches-for-week", [Authorize(Roles = "Admin,Manager")] (We
     var punches = repo.GetEmployeeTimePunchesListForWeek(data.Day);
     return Results.Ok(punches);
 }).WithName("GetTimePunchesForWeek");
+
+api.MapPost("update-timepunch", [Authorize(Roles = "Admin,Manager")] (TimePunchUpdateRequest request, ClaimsPrincipal user, EmployeeRepository repo) => 
+{
+    //TODO: Implement this endpoint to allow admins/managers to update time punches
+    Debug.WriteLine($"Received update request for EmployeeID: {request.Punch.EmployeeID}, TimePunchID: {request.Punch.TimePunchID}");
+
+    bool success = repo.UpdateTimePunch(request.Punch);
+    return Results.Ok(success);
+}).WithName("UpdateTimepunch");
 
 app.MapDefaultEndpoints();
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { type EmployeeRole, type EmployeeView, type TimePunch, formatTime, getEmployeeFullName, getWorkWeek, formatDateToDayOfWeek, getEmployeeFullNameShort, dateMatches, LogTimePunch} from './utils/TimePunchScripts';
+import { type EmployeeRole, type EmployeeView, type TimePunch, formatTime, getEmployeeFullName, getWorkWeek, 
+    formatDateToDayOfWeek, getEmployeeFullNameShort, dateMatches} from './utils/TimePunchScripts';
 import { apiService } from '../src/utils/apiService';
 import { useNavigate } from 'react-router-dom';
 
@@ -194,13 +195,14 @@ function EmployeeDetailCard({ employee, timePunch, date, onClose, onSaveSuccess 
     const [breakStart, setBreakStart] = useState("");
     const [breakEnd, setBreakEnd] = useState("");
     const [clockOut, setClockOut] = useState("");
+    const [timePunchID, setTimePunchID] = useState("");;
 
     const validateTPInput = (input: string, isRequired: boolean = false): boolean => {
         if (input === null || input === undefined || input === "") {
             return !isRequired;
         }
 
-        // Regex for HH:mm (24-hour format)
+        //Regex for HH:mm (24-hour format)
         const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
         return timeRegex.test(input);
     }
@@ -234,14 +236,14 @@ function EmployeeDetailCard({ employee, timePunch, date, onClose, onSaveSuccess 
         setterFunc(filteredVal);
     };
 
-    const handleSaveClick = () => {
+    const handleSaveClick = async () => {
         //Clock In is mandatory for any punch
         if (!validateTPInput(clockIn, true)) {
             alert("Please enter a valid Clock In time (HH:mm)");
             return;
         }
 
-        // Validate the rest
+        //Validate the rest
         if (!validateTPInput(breakStart) || !validateTPInput(breakEnd) || !validateTPInput(clockOut)) {
             alert("One or more times are invalid. Use HH:mm format.");
             return;
@@ -264,15 +266,15 @@ function EmployeeDetailCard({ employee, timePunch, date, onClose, onSaveSuccess 
             breakStart: combineDateAndTime(breakStart),
             breakEnd: combineDateAndTime(breakEnd),
             clockOut: combineDateAndTime(clockOut),
+            timePunchID: timePunch?.timePunchID ?? null
         };
 
         try {
             if (timePunch !== null) {
-                //TODO: Update logic
-                LogTimePunch(timePunchPayload);
+                await apiService.updatePunch(timePunchPayload);
+
             } else {
-                //TODO: Create logic
-                LogTimePunch(timePunchPayload);
+                await apiService.performPunch('clock-in');
             }
 
             alert("Success!");

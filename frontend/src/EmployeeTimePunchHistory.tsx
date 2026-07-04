@@ -73,6 +73,7 @@ function EmployeeTimePunchHistory() {
                           <th>Clock In</th>
                           <th>Break</th>
                           <th>Clock Out</th>
+                          <th>Hours Worked</th>
                       </tr>
                   </thead>
                   <tbody>
@@ -80,8 +81,8 @@ function EmployeeTimePunchHistory() {
                           <tr key={index}>
                               <td>{formatDate(p.clockIn)}</td>
                               <td>
-                                  <span className={`status-badge ${getShiftStatus(p).toLowerCase().replace(' ', '-')}`}>
-                                      {getShiftStatus(p)}
+                                  <span className={`status-badge ${(p.status ?? 'unknown').toLowerCase()}`}>
+                                    {p.status}
                                   </span>
                               </td>
                               <td>{formatTime(p.clockIn)}</td>
@@ -93,6 +94,10 @@ function EmployeeTimePunchHistory() {
                                   ) : "No Break"}
                               </td>
                               <td>{formatTime(p.clockOut)}</td>
+
+                              <td style={{ fontWeight: 'bold' }}>
+                                  {p.totalHours} hrs
+                              </td>
                           </tr>
                       ))}
                   </tbody>

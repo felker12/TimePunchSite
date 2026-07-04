@@ -5,6 +5,8 @@ export interface TimePunch {
     breakStart: string | null;
     breakEnd: string | null;
     timePunchID: number | null;
+    status?: string;
+    totalHours?: number;
 }
 
 export interface EmployeeView {

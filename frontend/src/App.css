@@ -141,7 +141,7 @@
 /* Main content */
 .main-content {
   flex: 1;
-  max-width: 1400px;
+  max-width: 1600px;
   width: 100%;
   margin: 0 auto;
   padding: 0rem 2rem 2rem;
@@ -707,10 +707,6 @@
 
   .main-content {
     padding: 0.75rem;
-  }
-
-  .card {
-    padding: 1rem;
   }
 
   .section-title {

@@ -18,3 +18,5 @@ public record PunchDataRequest([property: JsonPropertyName("punchLimit")] int Pu
 public record WeeklyReportRequest(DateTime Day);
 
 public record TimePunchUpdateRequest([property: JsonPropertyName("punch")] TimePunchData Punch);
+
+public record DeletePunchRequest([property: JsonPropertyName("timePunchID")] int TimePunchID);

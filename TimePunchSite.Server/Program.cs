@@ -136,14 +136,23 @@ api.MapPost("get-timepunches-for-week", [Authorize(Roles = "Admin,Manager")] (We
     return Results.Ok(punches);
 }).WithName("GetTimePunchesForWeek");
 
-api.MapPost("update-timepunch", [Authorize(Roles = "Admin,Manager")] (TimePunchUpdateRequest request, ClaimsPrincipal user, EmployeeRepository repo) => 
-{
-    //TODO: Implement this endpoint to allow admins/managers to update time punches
-    Debug.WriteLine($"Received update request for EmployeeID: {request.Punch.EmployeeID}, TimePunchID: {request.Punch.TimePunchID}");
+api.MapPost("update-timepunch", [Authorize(Roles = "Admin,Manager")] (TimePunchUpdateRequest request, EmployeeRepository repo) => {
 
-    bool success = repo.UpdateTimePunch(request.Punch);
-    return Results.Ok(success);
-}).WithName("UpdateTimepunch");
+    // Pass the mapped struct straight to your new dispatcher method
+    bool success = repo.SaveOrUpdateTimePunch(request.Punch);
+
+    if (!success)
+        return Results.BadRequest("Failed to process the time punch record.");
+
+    return Results.Ok(new { success = true });
+})
+.WithName("UpdateTimepunch");
+
+api.MapPost("delete-timepunch", [Authorize(Roles = "Admin,Manager")] (DeletePunchRequest request, EmployeeRepository repo) => {
+    bool success = repo.DeleteTimePunch(request.TimePunchID);
+    if (!success) return Results.BadRequest("Failed to delete the time punch.");
+    return Results.Ok(new { success = true });
+}).WithName("DeleteTimepunch");
 
 app.MapDefaultEndpoints();
 

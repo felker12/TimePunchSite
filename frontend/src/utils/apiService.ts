@@ -75,7 +75,7 @@ export const apiService = {
         return { success: result.success, role: result.role as EmployeeRole};
     },
 
-    //Admin function to update a time punch //TODO
+    //Admin function to update a time punch
     async updatePunch(punch: TimePunch): Promise<void> {
         const response = await fetch('/api/update-timepunch', {
             method: 'POST',
@@ -83,5 +83,14 @@ export const apiService = {
             body: JSON.stringify({ punch })
         });
         if (!response.ok) throw new Error("Failed to update punch");
+    },
+
+    async deletePunch(timePunchID: number): Promise<void> {
+        const response = await fetch('/api/delete-timepunch', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ timePunchID }) 
+        });
+        if (!response.ok) throw new Error("Failed to delete punch");
     }
 }

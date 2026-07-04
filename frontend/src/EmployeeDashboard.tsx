@@ -73,16 +73,19 @@ function EmployeeDashboard() {
     return (
         <div className="card" style={{ minWidth: '300px' }}>
             {!authStatus && <p>Checking authorization...</p>}
-            <h2>Employee {verifiedUserID}</h2>
-            <p>Status: <strong>{shiftStatus}</strong></p>
+            
+            <div>
+                <h2>Employee {verifiedUserID}</h2>
+                <p>Status: <strong>{shiftStatus}</strong></p>
+
+                {mostRecentPunch && (
+                    <p style={{ fontSize: '12px', color: '#666'}}>
+                        Clocked In: {formatDate(mostRecentPunch.clockIn)} at {formatTime(mostRecentPunch.clockIn)}
+                    </p>
+                )}
+            </div>
 
             <ClockInOutStatus shiftStatus={shiftStatus} breakOver={breakCompleted} onAction={handlePunchAction} />
-
-            {mostRecentPunch && (
-                <p style={{ fontSize: '12px', color: '#666', marginTop: '20px' }}>
-                    Last Activity: {formatDate(mostRecentPunch.clockIn)} at {formatTime(mostRecentPunch.clockIn)}
-                </p>
-            )}
         </div>
     );
 }

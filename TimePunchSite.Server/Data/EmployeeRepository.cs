@@ -51,6 +51,51 @@ public class EmployeeRepository(DatabaseService database, PasswordService passwo
         return new LoginResult(false);
     }
 
+    /// <summary>
+    /// Main dispatcher that decides whether to insert a new punch or update an existing one.
+    /// </summary>
+    public bool SaveOrUpdateTimePunch(TimePunchData punch)
+    {
+        if (!punch.TimePunchID.HasValue || punch.TimePunchID.Value == 0)
+        {
+            return InsertTimePunch(punch);
+        }
+        else
+        {
+            return UpdateTimePunch(punch);
+        }
+    }
+
+    /// <summary>
+    /// Handles fresh inserts when an admin fills an empty cell grid.
+    /// </summary>
+    private bool InsertTimePunch(TimePunchData punch)
+    {
+        using var connection = _database.CreateConnection();
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+        command.CommandText = @"
+                INSERT INTO TimePunches (EmployeeID, ClockIn, BreakStart, BreakEnd, ClockOut)
+                VALUES (@EmployeeID, @ClockIn, @BreakStart, @BreakEnd, @ClockOut);";
+
+        AddSharedParameters(command, punch);
+
+        return command.ExecuteNonQuery() > 0;
+    }
+
+    public bool DeleteTimePunch(int timePunchID)
+    {
+        using var connection = _database.CreateConnection();
+        const string query = "DELETE FROM dbo.TimePunches WHERE TimePunchID = @timePunchID";
+
+        using var command = new SqlCommand(query, connection);
+        command.Parameters.Add("@timePunchID", SqlDbType.Int).Value = timePunchID;
+
+        connection.Open();
+        return command.ExecuteNonQuery() > 0;
+    }
+
     public bool PerformPunchAction(int id, string actionType)
     {
         if (id < 1 || string.IsNullOrEmpty(actionType))
@@ -91,38 +136,41 @@ public class EmployeeRepository(DatabaseService database, PasswordService passwo
         return rowsAffected > 0;
     }
 
-    public bool UpdateTimePunch(int timePunchID, DateTime clockIn, DateTime? clockOut, DateTime? breakStart, DateTime? breakEnd)
+    /// <summary>
+    /// Private helper to avoid repeating boilerplate SQL parameter binding code.
+    /// </summary>
+    private static void AddSharedParameters(SqlCommand command, TimePunchData punch)
     {
-        using var connection = _database.CreateConnection();
-
-        const string query = @"
-            UPDATE dbo.TimePunches
-            SET ClockIn = @clockIn,
-                ClockOut = @clockOut,
-                BreakStart = @breakStart,
-                BreakEnd = @breakEnd
-            WHERE TimePunchID = @timePunchID";
-
-        using var command = new SqlCommand(query, connection);
-
-        command.Parameters.Add("@timePunchID", SqlDbType.Int).Value = timePunchID;
-        command.Parameters.Add("@clockIn", SqlDbType.DateTime2).Value = clockIn;
-        command.Parameters.Add("@clockOut", SqlDbType.DateTime2).Value = (object?)clockOut ?? DBNull.Value;
-        command.Parameters.Add("@breakStart", SqlDbType.DateTime2).Value = (object?)breakStart ?? DBNull.Value;
-        command.Parameters.Add("@breakEnd", SqlDbType.DateTime2).Value = (object?)breakEnd ?? DBNull.Value;
-
-        connection.Open();
-
-        int rowsAffected = command.ExecuteNonQuery();
-
-        Debug.WriteLine($"Rows affected: {rowsAffected}"); //TODO
-
-        return rowsAffected > 0;
+        command.Parameters.Add(new SqlParameter("@EmployeeID", SqlDbType.Int) { Value = punch.EmployeeID });
+        command.Parameters.Add(new SqlParameter("@ClockIn", SqlDbType.DateTime) { Value = punch.ClockIn });
+        command.Parameters.Add(new SqlParameter("@BreakStart", SqlDbType.DateTime) { Value = (object?)punch.BreakStart ?? DBNull.Value });
+        command.Parameters.Add(new SqlParameter("@BreakEnd", SqlDbType.DateTime) { Value = (object?)punch.BreakEnd ?? DBNull.Value });
+        command.Parameters.Add(new SqlParameter("@ClockOut", SqlDbType.DateTime) { Value = (object?)punch.ClockOut ?? DBNull.Value });
     }
 
     public bool UpdateTimePunch(TimePunchData punchData)
     {
-        return UpdateTimePunch(punchData.EmployeeID, punchData.ClockIn, punchData.ClockOut, punchData.BreakStart, punchData.BreakEnd);
+        using var connection = _database.CreateConnection();
+
+        const string query = @"
+        UPDATE dbo.TimePunches
+        SET ClockIn = @ClockIn,
+            ClockOut = @ClockOut,
+            BreakStart = @BreakStart,
+            BreakEnd = @BreakEnd,
+            EmployeeID = @EmployeeID
+        WHERE TimePunchID = @TimePunchID";
+
+        using var command = new SqlCommand(query, connection);
+
+        command.Parameters.Add(new SqlParameter("@TimePunchID", SqlDbType.Int) { Value = punchData.TimePunchID!.Value });
+
+        AddSharedParameters(command, punchData);
+
+        connection.Open();
+
+        int rowsAffected = command.ExecuteNonQuery();
+        return rowsAffected > 0;
     }
 
     public List<TimePunchData> GetTimePunchDataList(int id, int limit = 2000)
